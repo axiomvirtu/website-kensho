@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KenshoTech Ecosystem | Panel Admin</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <main class="page-shell">
+        <header class="site-header">
+            <div class="brand-lockup">
+                <img class="brand-logo" src="assets/kensho-logo.png" alt="KenshoTech Ecosystem">
+                <div>
+                <p class="eyebrow">KENSHOTECH ECOSYSTEM / ADMIN</p>
+                <h1 id="championship-title">Nama Kejuaraan</h1>
+                <p class="intro">Upload file Excel untuk memperbarui daftar peserta yang tampil di halaman publik.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span id="user-status" class="user-status" hidden></span>
+                <button id="logout-button" class="button secondary-button" type="button" hidden>Keluar</button>
+                <a class="header-link" href="index.html">Halaman Publik</a>
+            </div>
+        </header>
+
+        <section id="login-panel" class="content-panel login-panel">
+            <div class="panel-toolbar compact-toolbar">
+                <div>
+                    <p class="eyebrow">AKSES TERBATAS</p>
+                    <h2>Login panel admin</h2>
+                </div>
+            </div>
+            <form id="login-form" class="login-form">
+                <button id="google-login-button" class="button primary-button google-login-button" type="submit">
+                    <span class="google-mark" aria-hidden="true">G</span>
+                    Masuk dengan Google
+                </button>
+            </form>
+            <p id="login-status" class="status-message">Super Admin masuk dengan Google. Admin biasa gunakan kode akses.</p>
+        </section>
+
+        <section id="access-panel" class="content-panel login-panel">
+            <div class="panel-toolbar compact-toolbar">
+                <div>
+                    <p class="eyebrow">VERIFIKASI ADMIN</p>
+                    <h2>Login Admin</h2>
+                </div>
+            </div>
+            <form id="access-form" class="login-form">
+                <label for="access-code">Kode akses</label>
+                <input id="access-code" type="password" autocomplete="one-time-code" required>
+                <button id="access-button" class="button primary-button" type="submit">Buka Panel Admin</button>
+            </form>
+            <p id="access-status" class="status-message">Masukkan kode akses untuk membuat sesi admin Firebase.</p>
+        </section>
+
+        <div id="admin-content" hidden>
+            <section class="summary-grid admin-summary" aria-label="Ringkasan data peserta">
+                <div class="summary-card">
+                    <span>Total peserta</span>
+                    <strong id="admin-total-count">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Peserta Open</span>
+                    <strong id="admin-open-count">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Open Perorangan</span>
+                    <strong id="admin-open-individual-count">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Open Beregu</span>
+                    <strong id="admin-open-team-count">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Peserta Festival</span>
+                    <strong id="admin-festival-count">0</strong>
+                </div>
+            </section>
+
+            <div class="admin-shell">
+                <aside class="admin-sidebar" aria-label="Menu utama admin">
+                    <p class="eyebrow">MENU</p>
+                    <button class="admin-view-tab active" data-admin-view="participant-list" type="button">List Peserta</button>
+                    <button class="admin-view-tab" data-admin-view="class-recap" type="button">Rekap Total</button>
+                    <button class="admin-view-tab" data-admin-view="medal-count" type="button">Penghitungan Medali</button>
+                    <div class="sidebar-divider"></div>
+                    <p class="eyebrow">SETTINGS</p>
+                    <button class="settings-view-tab active" data-settings-view="event-settings" type="button">Nama Kejuaraan</button>
+                    <button class="settings-view-tab" data-settings-view="class-type-settings" type="button">Pengaturan Kelas</button>
+                    <button class="settings-view-tab" data-settings-view="access-code-management" type="button">Kode Akses</button>
+                    <button class="settings-view-tab" data-settings-view="upload-panel" type="button">Import File</button>
+                </aside>
+
+                <div class="admin-main-panel">
+                    <section id="participant-list-view" class="content-panel admin-data-view">
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">PENDAFTARAN MASUK</p>
+                                <h2>List Peserta</h2>
+                            </div>
+                        </div>
+                        <nav class="category-list" aria-label="Kategori list peserta">
+                            <button class="category-button admin-category-tab active" data-admin-category="Open" type="button">Open</button>
+                            <button class="category-button admin-category-tab" data-admin-category="Festival" type="button">Festival</button>
+                        </nav>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>No.</th><th>Nama Lengkap</th><th>Kelas Pertandingan</th><th>Kontingen</th></tr></thead>
+                                <tbody id="admin-participant-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-bar">
+                            <button id="admin-previous-page" class="button secondary-button" type="button">Sebelumnya</button>
+                            <span id="admin-page-info" class="page-info">Halaman 1</span>
+                            <button id="admin-next-page" class="button secondary-button" type="button">Berikutnya</button>
+                        </div>
+                    </section>
+
+                    <section id="class-recap-view" class="content-panel admin-data-view" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">REKAP KELAS</p>
+                                <h2>Total Peserta per Kelas</h2>
+                            </div>
+                        </div>
+                        <nav class="category-list" aria-label="Kategori rekap kelas">
+                            <button class="category-button recap-category-tab active" data-recap-category="Open" type="button">Open</button>
+                            <button class="category-button recap-category-tab" data-recap-category="Festival" type="button">Festival</button>
+                        </nav>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>No.</th><th>Kelas Pertandingan</th><th>Total Pendaftar</th></tr></thead>
+                                <tbody id="class-recap-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="medal-count-view" class="content-panel admin-data-view" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">HASIL KEJUARAAN</p>
+                                <h2>Penghitungan Medali</h2>
+                            </div>
+                        </div>
+                        <nav class="category-list" aria-label="Kategori penghitungan medali">
+                            <button class="category-button medal-category-tab active" data-medal-category="Open" type="button">Open</button>
+                            <button class="category-button medal-category-tab" data-medal-category="Festival" type="button" disabled>Festival</button>
+                        </nav>
+                        <p id="medal-status" class="status-message">Kebutuhan medali Open.</p>
+                        <div class="medal-summary-grid">
+                            <div class="summary-card"><span>Emas</span><strong id="gold-medal-count">0</strong></div>
+                            <div class="summary-card"><span>Perak</span><strong id="silver-medal-count">0</strong></div>
+                            <div class="summary-card"><span>Perunggu</span><strong id="bronze-medal-count">0</strong></div>
+                        </div>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">KELAS TERISI</p>
+                                <h2>Kebutuhan medali per kelas</h2>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>No.</th><th>Kelas Pertandingan</th><th>Jenis</th><th>Total Pendaftar</th><th>Emas</th><th>Perak</th><th>Perunggu</th><th>Keterangan</th></tr></thead>
+                                <tbody id="eligible-class-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <div class="settings-shell">
+                        <aside class="settings-sidebar" aria-label="Menu setting">
+                            <p class="eyebrow">SETTINGS</p>
+                            <button class="settings-view-tab active" data-settings-view="event-settings" type="button">Nama Kejuaraan</button>
+                            <button class="settings-view-tab" data-settings-view="class-type-settings" type="button">Pengaturan Kelas</button>
+                            <button class="settings-view-tab" data-settings-view="access-code-management" type="button">Kode Akses</button>
+                            <button class="settings-view-tab" data-settings-view="upload-panel" type="button">Import File</button>
+                        </aside>
+
+                        <div class="settings-content">
+                            <section id="access-code-management" class="content-panel settings-panel" hidden>
+                                <div class="panel-toolbar compact-toolbar">
+                                    <div>
+                                        <p class="eyebrow">SUPER ADMIN</p>
+                                        <h2>Kelola kode akses</h2>
+                                    </div>
+                                </div>
+                                <form id="access-code-form" class="settings-form">
+                                    <label for="new-access-code">Kode baru</label>
+                                    <div class="settings-form-row">
+                                        <input id="new-access-code" type="text" minlength="4" maxlength="40" placeholder="Contoh: 2026" required>
+                                        <button class="button primary-button" type="submit">Buat kode</button>
+                                    </div>
+                                    <label for="new-access-label">Label kode (opsional)</label>
+                                    <input id="new-access-label" type="text" maxlength="80" placeholder="Contoh: Admin pertandingan">
+                                    <p id="access-code-status" class="status-message">Buat beberapa kode untuk admin yang berbeda.</p>
+                                </form>
+                                <div id="access-code-list" class="access-code-list"></div>
+                            </section>
+
+                            <section id="event-settings" class="content-panel settings-panel">
+                                <div class="panel-toolbar compact-toolbar">
+                                    <div>
+                                        <p class="eyebrow">IDENTITAS ACARA</p>
+                                        <h2>Nama kejuaraan</h2>
+                                    </div>
+                                </div>
+                                <form id="championship-form" class="settings-form">
+                                    <label for="championship-name">Judul yang tampil di halaman publik</label>
+                                    <div class="settings-form-row">
+                                        <input id="championship-name" type="text" maxlength="120" placeholder="Contoh: Kejuaraan Karate Nasional 2026" required>
+                                        <button class="button primary-button" type="submit">Simpan nama</button>
+                                    </div>
+                                    <p id="championship-status" class="status-message">Nama kejuaraan belum diatur.</p>
+                                </form>
+                            </section>
+
+                            <section id="class-type-settings" class="content-panel settings-panel" hidden>
+                                <div class="panel-toolbar compact-toolbar">
+                                    <div>
+                                        <p class="eyebrow">PENGATURAN KELAS</p>
+                                        <h2>Tag kelas Beregu / Perorangan</h2>
+                                    </div>
+                                </div>
+                                <form id="class-type-form" class="settings-form">
+                                    <label for="class-name-tag">Nama kelas</label>
+                                    <input id="class-name-tag" type="text" placeholder="Contoh: U-12 Beregu" required>
+                                    <label for="class-type-select">Jenis kelas</label>
+                                    <select id="class-type-select">
+                                        <option value="Perorangan">Perorangan</option>
+                                        <option value="Beregu">Beregu</option>
+                                    </select>
+                                    <button class="button primary-button" type="submit">Simpan tag kelas</button>
+                                    <p id="class-type-status" class="status-message">Gunakan tag ini agar sistem tahu kelas mana yang beregu dan mana yang perorangan.</p>
+                                </form>
+                                <div id="class-type-list" class="access-code-list"></div>
+                            </section>
+
+                            <section id="upload-panel" class="content-panel admin-panel" hidden>
+                                <div class="panel-toolbar">
+                                    <div>
+                                        <p class="eyebrow">IMPORT EXCEL</p>
+                                        <h2>Upload data terbaru</h2>
+                                    </div>
+                                    <span class="source-badge">Baris data mulai 14</span>
+                                </div>
+                                <label class="file-dropzone" for="excel-upload">
+                                    <span class="file-title">Pilih file Excel</span>
+                                    <span class="file-help">Pilih satu atau beberapa file .xlsx/.xls. Sheet FESTIVAL dan OPEN dari semua file akan digabung.</span>
+                                    <input id="excel-upload" type="file" accept=".xlsx,.xls" multiple>
+                                </label>
+
+                                <div id="sheet-selector-container" class="admin-controls" hidden>
+                                    <label for="sheet-selector">Kategori yang akan disimpan</label>
+                                    <select id="sheet-selector"></select>
+                                    <button id="btn-save-firebase" class="button primary-button" type="button">Simpan Semua ke RTDB</button>
+                                </div>
+                                <p id="status-message" class="status-message">Belum ada file yang dipilih.</p>
+                            </section>
+
+                            <section id="preview-panel" class="content-panel" hidden>
+                                <div class="panel-toolbar compact-toolbar">
+                                    <div>
+                                        <p class="eyebrow">PRATINJAU</p>
+                                        <h2>Sheet: <span id="current-category">Belum dipilih</span></h2>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead><tr id="table-head"></tr></thead>
+                                        <tbody id="table-body"></tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="app.js?v=3"></script>
+</body>
+</html>

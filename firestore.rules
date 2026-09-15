@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSuperAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/pengaturan/aplikasi)
+        && get(/databases/$(database)/documents/pengaturan/aplikasi).data.superAdminUid == request.auth.uid;
+    }
+
+    function isAdminSession() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    match /peserta_festival/{participantId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin() || isAdminSession();
+    }
+
+    match /peserta_open/{participantId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin() || isAdminSession();
+    }
+
+    match /peserta/{participantId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin() || isAdminSession();
+    }
+
+    match /pengaturan/aplikasi {
+      allow read: if true;
+      allow create: if request.auth != null
+        && !exists(/databases/$(database)/documents/pengaturan/aplikasi)
+        && request.resource.data.keys().hasOnly(['superAdminUid', 'superAdminEmail'])
+        && request.resource.data.superAdminUid == request.auth.uid
+        && request.resource.data.superAdminEmail is string;
+      allow update: if (
+          request.auth != null
+          && !('superAdminUid' in resource.data)
+          && request.resource.data.superAdminUid == request.auth.uid
+          && request.resource.data.superAdminEmail is string
+          && request.resource.data.keys().hasOnly(['superAdminUid', 'superAdminEmail', 'namaKejuaraan', 'diperbaruiPada'])
+        ) || (
+          isSuperAdmin()
+          && request.resource.data.superAdminUid == resource.data.superAdminUid
+          && request.resource.data.superAdminEmail is string
+          && request.resource.data.keys().hasOnly(['superAdminUid', 'superAdminEmail', 'namaKejuaraan', 'diperbaruiPada'])
+          && (!('namaKejuaraan' in request.resource.data)
+            || (request.resource.data.namaKejuaraan is string
+              && request.resource.data.namaKejuaraan.size() > 0
+              && request.resource.data.namaKejuaraan.size() <= 120))
+          && (!('diperbaruiPada' in request.resource.data)
+            || request.resource.data.diperbaruiPada is string)
+        );
+      allow delete: if isSuperAdmin();
+    }
+
+    match /pengguna/{userId} {
+      allow read: if request.auth != null
+        && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'nama', 'fotoUrl', 'role', 'terakhirLogin'])
+        && request.resource.data.uid == userId
+        && request.resource.data.email is string
+        && request.resource.data.role in ['super_admin', 'admin']
+        && request.resource.data.terakhirLogin is string;
+      allow delete: if isSuperAdmin();
+    }
+
+    match /kodeAkses/{codeHash} {
+      allow read: if true;
+      allow create, update: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['label', 'active', 'createdAt'])
+        && request.resource.data.label is string
+        && request.resource.data.active is bool
+        && request.resource.data.createdAt is string;
+      allow delete: if isSuperAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

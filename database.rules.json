@@ -1,0 +1,24 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "peserta": {
+      ".read": true,
+      ".write": "auth != null && (root.child('pengaturan/superAdminUid').val() == auth.uid || auth.token.firebase.sign_in_provider == 'anonymous')"
+    },
+    "pengaturan": {
+      ".read": true,
+      ".write": "auth != null && root.child('pengaturan/superAdminUid').val() == auth.uid"
+    },
+    "pengguna": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "kodeAkses": {
+      ".read": true,
+      ".write": "auth != null && root.child('pengaturan/superAdminUid').val() == auth.uid"
+    }
+  }
+}
