@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^node --check admin\\.js; git diff --check; node -e \"const festivalCount=10; const medals=\\{emas:Math\\.ceil\\(festivalCount/2\\),perak:Math\\.floor\\(festivalCount/2\\),perunggu:0\\}; console\\.log\\('Festival 10 peserta =', medals\\);\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^node --check admin\\.js; node -e \"function medalRequirement\\(count,allocation=''\\)\\{const medals=allocation==='Perak'\\?\\{emas:Math\\.floor\\(count/2\\),perak:Math\\.ceil\\(count/2\\),perunggu:0\\}:allocation==='Emas'\\?\\{emas:Math\\.ceil\\(count/2\\),perak:Math\\.floor\\(count/2\\),perunggu:0\\}:\\{emas:Math\\.floor\\(count/2\\),perak:Math\\.floor\\(count/2\\),perunggu:0\\}; console\\.log\\(count, allocation \\|\\| 'kosong', medals\\);\\} medalRequirement\\(1\\); medalRequirement\\(1,'Emas'\\); medalRequirement\\(63\\); medalRequirement\\(63,'Perak'\\);\"; git diff --check$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

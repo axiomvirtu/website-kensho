@@ -25,12 +25,17 @@ const nextPageButton = document.getElementById("next-page");
 const pageInfo = document.getElementById("page-info");
 
 let allParticipants = [];
+let classTypeSettings = {};
 let activeCategory = "all";
 let searchTerm = "";
 let currentPage = 1;
 let loadingPromise = null;
 const pageSize = 50;
 const participantCacheKey = "kenshotech_participants_cache";
+const participantVersionKey = "kenshotech_participants_version";
+const championshipNameKey = "kenshotech_championship_name";
+let lastRefreshTime = 0;
+const REFRESH_COOLDOWN_MS = 6000;
 
 function restoreCachedParticipants() {
     try {
@@ -40,7 +45,11 @@ function restoreCachedParticipants() {
         allParticipants = cachedParticipants;
         updateSummary();
         renderTable();
-        setStatus("Menampilkan data tersimpan. Memperbarui data terbaru...", "success");
+        const savedTime = localStorage.getItem("kenshotech_participants_timestamp");
+        if (savedTime) {
+            lastUpdated.textContent = `Tersimpan ${new Date(Number(savedTime)).toLocaleTimeString("id-ID")}`;
+        }
+        setStatus("Menampilkan data tersimpan di perangkat ini. Memeriksa status terbaru...", "success");
         return true;
     } catch (error) {
         console.warn("Cache peserta tidak dapat digunakan:", error);
@@ -61,14 +70,30 @@ function updateSummary() {
 
 async function loadChampionshipName() {
     try {
+        const cachedName = localStorage.getItem(championshipNameKey);
+        if (cachedName) {
+            championshipTitle.textContent = cachedName;
+            document.title = `${cachedName} | Daftar Peserta`;
+        }
         const snapshot = await get(ref(rtdb, "pengaturan/namaKejuaraan"));
         const championshipName = snapshot.val()?.trim();
-        if (championshipName) {
+        if (championshipName && championshipName !== cachedName) {
             championshipTitle.textContent = championshipName;
             document.title = `${championshipName} | Daftar Peserta`;
+            localStorage.setItem(championshipNameKey, championshipName);
         }
     } catch (error) {
         console.error("Gagal mengambil nama kejuaraan:", error);
+    }
+}
+
+async function getRemoteVersion() {
+    try {
+        const snapshot = await get(ref(rtdb, "versiPeserta"));
+        return snapshot.val();
+    } catch (error) {
+        console.warn("Gagal membaca versiPeserta:", error);
+        return null;
     }
 }
 
@@ -99,16 +124,65 @@ function participantCount(participants, category) {
     const categoryParticipants = participants.filter(participant => participant.category === category);
     if (category !== "Open") return categoryParticipants.length;
 
-    const teamRows = categoryParticipants.filter(participant =>
-        /beregu/i.test(participant["KELAS PERTANDINGAN"] || "")
-    ).length;
+    const teamRows = categoryParticipants.filter(participant => isTeamClassPublic(participant["KELAS PERTANDINGAN"])).length;
     return categoryParticipants.length - teamRows + teamRows / 3;
 }
 
 function openBreakdown(participants) {
     const openParticipants = participants.filter(participant => participant.category === "Open");
-    const teamRows = openParticipants.filter(participant => /beregu/i.test(participant["KELAS PERTANDINGAN"] || "")).length;
+    const teamRows = openParticipants.filter(participant => isTeamClassPublic(participant["KELAS PERTANDINGAN"])).length;
     return { individual: openParticipants.length - teamRows, teams: teamRows / 3 };
+}
+
+function normalizePublicClassName(value) {
+    return String(value ?? "").replace(/\s+/g, " ").trim() || "Tanpa kelas";
+}
+
+function isTeamClassPublic(className) {
+    const normalizedClassName = normalizePublicClassName(className).toLowerCase();
+    const configuredType = Object.entries(classTypeSettings).find(([key]) => normalizePublicClassName(key).toLowerCase() === normalizedClassName)?.[1];
+    if (configuredType) return String(configuredType).toLowerCase() === "beregu";
+    return /beregu|team|tim|regu/i.test(normalizedClassName);
+}
+
+function mergePublicTeamParticipants(participants) {
+    const mergedRows = [];
+    const teamGroups = new Map();
+    participants.forEach(participant => {
+        if (participant.category !== "Open" || !isTeamClassPublic(participant["KELAS PERTANDINGAN"])) {
+            mergedRows.push({
+                ...participant,
+                _teamSearchText: String(participant["NAMA LENGKAP"] || "")
+            });
+            return;
+        }
+        const className = normalizePublicClassName(participant["KELAS PERTANDINGAN"]);
+        const contingent = String(participant.KONTINGEN || "Tanpa kontingen").trim();
+        const teamKey = `${className.toLowerCase()}::${contingent.toLowerCase()}`;
+        if (!teamGroups.has(teamKey)) teamGroups.set(teamKey, []);
+        teamGroups.get(teamKey).push(participant);
+    });
+
+    teamGroups.forEach(members => {
+        const sortedMembers = [...members].sort((first, second) => String(first["NAMA LENGKAP"] || "").localeCompare(String(second["NAMA LENGKAP"] || ""), "id", { sensitivity: "base" }));
+        mergedRows.push({
+            ...sortedMembers[0],
+            "NAMA LENGKAP": `${sortedMembers[0]["NAMA LENGKAP"] || "Tim"} Cs`,
+            _teamMembers: sortedMembers.length,
+            _teamSearchText: sortedMembers.map(member => [
+                member["NAMA LENGKAP"],
+                member["KELAS PERTANDINGAN"],
+                member.KONTINGEN,
+                member.category
+            ].join(" ")).join(" ")
+        });
+    });
+
+    return mergedRows.sort((first, second) => {
+        const classComparison = normalizePublicClassName(first["KELAS PERTANDINGAN"]).localeCompare(normalizePublicClassName(second["KELAS PERTANDINGAN"]), "id", { sensitivity: "base" });
+        if (classComparison) return classComparison;
+        return String(first["NAMA LENGKAP"] || "").localeCompare(String(second["NAMA LENGKAP"] || ""), "id", { sensitivity: "base" });
+    });
 }
 
 function sortParticipants(participants) {
@@ -121,10 +195,10 @@ function sortParticipants(participants) {
     );
 }
 
-async function loadParticipants(attempt = 0) {
+async function loadParticipants(forceFullDownload = false, attempt = 0) {
     if (attempt === 0) {
         if (loadingPromise) return loadingPromise;
-        loadingPromise = loadParticipants(1);
+        loadingPromise = loadParticipants(forceFullDownload, 1);
         try {
             return await loadingPromise;
         } finally {
@@ -132,10 +206,33 @@ async function loadParticipants(attempt = 0) {
         }
     }
 
-    setStatus(allParticipants.length ? "Sedang memperbarui data peserta ke database..." : "Sedang mengambil data peserta ke database");
     refreshButton.disabled = true;
 
     try {
+        try {
+            const classSettingsSnapshot = await get(ref(rtdb, "pengaturan/jenisKelas"));
+            classTypeSettings = classSettingsSnapshot.val() || {};
+        } catch (error) {
+            console.warn("Pengaturan jenis kelas publik belum dapat dimuat:", error);
+        }
+        const localVersion = localStorage.getItem(participantVersionKey);
+        const hasCachedData = allParticipants.length > 0;
+
+        // Pengecekan versi cepat (hanya unduh ukuran mikro beberapa byte)
+        setStatus(hasCachedData ? "Memeriksa status pembaruan data..." : "Menghubungkan ke database...");
+        const remoteVersion = await getRemoteVersion();
+
+        // Optimasi Kuota RTDB: jika versi sama dan cache ada, hindari download data ratusan KB
+        if (!forceFullDownload && hasCachedData && remoteVersion && String(remoteVersion) === String(localVersion)) {
+            lastUpdated.textContent = `Sinkron ${new Date().toLocaleTimeString("id-ID")} (Data Terkini)`;
+            setStatus("Data peserta sudah versi terbaru dari panitia (hemat kuota).", "success");
+            updateSummary();
+            renderTable();
+            return;
+        }
+
+        setStatus(hasCachedData ? "Ada pembaruan data panitia. Mengunduh data terbaru..." : "Mengambil data peserta ke database...");
+
         const participants = (await loadRtdbParticipants()).map(participant => ({
             ...participant,
             category: participant.kategori || "Festival"
@@ -143,8 +240,15 @@ async function loadParticipants(attempt = 0) {
 
         allParticipants = sortParticipants(participants);
         localStorage.setItem(participantCacheKey, JSON.stringify(allParticipants));
+        localStorage.setItem("kenshotech_participants_timestamp", String(Date.now()));
+        if (remoteVersion) {
+            localStorage.setItem(participantVersionKey, String(remoteVersion));
+        } else {
+            localStorage.setItem(participantVersionKey, String(Date.now()));
+        }
+
         updateSummary();
-        lastUpdated.textContent = `Diperbarui ${new Date().toLocaleString("id-ID")}`;
+        lastUpdated.textContent = `Diperbarui ${new Date().toLocaleTimeString("id-ID")}`;
         setStatus(allParticipants.length ? "Data peserta siap ditampilkan." : "Belum ada data peserta tersimpan.", allParticipants.length ? "success" : "empty");
         renderTable();
     } catch (error) {
@@ -153,7 +257,7 @@ async function loadParticipants(attempt = 0) {
             const retryDelay = 3000 * attempt;
             setStatus(`Database sedang sibuk. Mencoba lagi dalam ${retryDelay / 1000} detik...`, "empty");
             await new Promise(resolve => setTimeout(resolve, retryDelay));
-            return loadParticipants(attempt + 1);
+            return loadParticipants(forceFullDownload, attempt + 1);
         }
         if (allParticipants.length) {
             setStatus("Data tersimpan ditampilkan sementara. Pembaruan database akan dicoba lagi saat Muat ulang.", "empty");
@@ -203,9 +307,11 @@ function renderTable() {
     const categoryParticipants = activeCategory === "all"
         ? allParticipants
         : allParticipants.filter(participant => participant.category.toLowerCase() === activeCategory);
-    const visibleParticipants = categoryParticipants.filter(participant => {
+    const mergedParticipants = mergePublicTeamParticipants(categoryParticipants);
+    const visibleParticipants = mergedParticipants.filter(participant => {
         if (!searchTerm) return true;
         const searchableText = [
+            participant._teamSearchText,
             participant["NAMA LENGKAP"],
             participant["KELAS PERTANDINGAN"],
             participant.KONTINGEN,
@@ -253,7 +359,25 @@ function renderTable() {
     nextPageButton.disabled = currentPage === totalPages;
 }
 
-refreshButton.addEventListener("click", loadParticipants);
+refreshButton.addEventListener("click", () => {
+    const now = Date.now();
+    if (now - lastRefreshTime < REFRESH_COOLDOWN_MS) {
+        const remainingSeconds = Math.ceil((REFRESH_COOLDOWN_MS - (now - lastRefreshTime)) / 1000);
+        setStatus(`Harap tunggu ${remainingSeconds} detik sebelum memeriksa database lagi.`, "empty");
+        return;
+    }
+    lastRefreshTime = now;
+    void loadParticipants(false);
+});
+
+// Jika pengguna klik ganda pada tombol muat ulang saat menekan tombol Shift, izinkan force refresh
+refreshButton.addEventListener("dblclick", event => {
+    if (event.shiftKey) {
+        lastRefreshTime = Date.now();
+        setStatus("Mengunduh ulang seluruh data dari awal...");
+        void loadParticipants(true);
+    }
+});
 searchInput.addEventListener("input", event => {
     searchTerm = event.target.value.trim().toLocaleLowerCase("id-ID");
     currentPage = 1;

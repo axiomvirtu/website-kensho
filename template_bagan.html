@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bagan Kejuaraan Template Kustom (A - AD)</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: radial-gradient(ellipse at top, #0f172a, #020617);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .seamless-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+    .seamless-input:focus, .seamless-input:hover {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(99, 102, 241, 0.5);
+      padding-left: 4px;
+    }
+    .seamless-input::placeholder { color: #64748b; font-weight: normal; }
+
+    .match-disabled {
+      opacity: 0.35;
+      filter: grayscale(80%);
+    }
+
+    .slot-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 30px;
+      cursor: pointer;
+    }
+
+    .slot-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .slot-toggle-track {
+      position: relative;
+      display: inline-flex;
+      width: 24px;
+      height: 14px;
+      align-items: center;
+      border-radius: 999px;
+      background: #475569;
+      transition: background .18s ease;
+    }
+
+    .slot-toggle-thumb {
+      width: 10px;
+      height: 10px;
+      margin-left: 2px;
+      border-radius: 50%;
+      background: #f8fafc;
+      transition: transform .18s ease;
+    }
+
+    .slot-toggle input:checked + .slot-toggle-track {
+      background: #10b981;
+    }
+
+    .slot-toggle input:checked + .slot-toggle-track .slot-toggle-thumb {
+      transform: translateX(10px);
+    }
+
+    @media print {
+      body { background: white !important; color: black !important; overflow: visible; display: block; }
+      .no-print { display: none !important; }
+      .bracket-container { overflow: visible !important; padding: 0 !important; }
+      #bracket-wrapper { gap: 40px !important; margin-top: 20px !important; }
+      .match-card { 
+        background: white !important; 
+        border: 2px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        border-radius: 8px !important;
+      }
+      .match-card .seamless-input { color: #0f172a !important; font-weight: 700; background: transparent !important; border: none !important; }
+      .match-card .text-slate-400 { color: #64748b !important; }
+      svg path { stroke: #94a3b8 !important; stroke-width: 2px !important; }
+      svg circle { fill: #94a3b8 !important; }
+      * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col antialiased">
+
+  <header class="no-print bg-slate-900/90 backdrop-blur-md border-b border-slate-800 z-30 shadow-lg">
+    <div class="px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <i class="fa-solid fa-network-wired text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm md:text-lg text-white tracking-wide" id="bracket-page-title">BAGAN TEMPLATE 16 BESAR (A - AD)</h1>
+          <p class="text-[10px] md:text-[11px] text-indigo-300 font-semibold uppercase tracking-widest" id="bracket-page-subtitle">Single Elimination Dinamis</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Hidden by default advanced slot & participant controls -->
+        <div id="extra-controls-panel" class="hidden items-center gap-2 transition-all duration-300">
+          <div class="flex items-center gap-2 bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700">
+            <span class="text-xs font-bold text-slate-300"><i class="fa-solid fa-users-viewfinder text-indigo-400 mr-1.5"></i> Jumlah:</span>
+            <select id="participant-count-select" onchange="changeParticipantCount(this.value)" class="bg-slate-900 text-indigo-300 text-xs font-extrabold rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-indigo-500">
+              <!-- Dinamis 2 sampai 16 -->
+            </select>
+          </div>
+
+          <button onclick="toggleSlotSwitches()" class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-500/30 transition-all flex items-center gap-1.5" title="Tampilkan saklar slot ON/OFF">
+            <i class="fa-solid fa-toggle-on text-indigo-400"></i> Saklar Slot
+          </button>
+        </div>
+
+        <button id="toggle-advanced-btn" onclick="toggleAdvancedControls()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs md:text-sm font-semibold rounded-lg border border-slate-700 transition-all flex items-center gap-2 text-slate-300" title="Buka pengaturan slot manual">
+          <i class="fa-solid fa-sliders text-indigo-400"></i> <span class="hidden sm:inline">Pengaturan Slot</span>
+        </button>
+        <button onclick="window.print()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs md:text-sm font-semibold rounded-lg border border-slate-700 transition-all flex items-center gap-2 text-slate-200">
+          <i class="fa-solid fa-print text-emerald-400"></i> Cetak
+        </button>
+        <button onclick="resetData()" class="px-3 py-2 bg-transparent hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 text-sm font-semibold rounded-lg border border-transparent hover:border-rose-500/30 transition-all" title="Reset Data">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-auto bracket-container relative" id="scroll-area">
+    <div class="relative min-w-max p-12 flex gap-12 items-center" id="bracket-wrapper">
+      
+      <!-- SVG Connecting Lines Layer -->
+      <svg id="lines-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0"></svg>
+
+      <!-- Round 1: 16 Besar (A-P) -->
+      <div id="column-r1" class="flex flex-col gap-6 w-64 z-10 py-4">
+        <div class="text-center mb-4 no-print">
+          <span class="text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 bg-slate-800/80 backdrop-blur text-slate-300 rounded-lg border border-slate-700 shadow-sm">16 Besar (A - P)</span>
+        </div>
+        <div id="round-1-matches" class="flex flex-col justify-around h-[900px]"></div>
+      </div>
+
+      <!-- Round 2: 8 Besar (Q-X) -->
+      <div id="column-r2" class="flex flex-col gap-6 w-64 z-10 py-4">
+        <div class="text-center mb-4 no-print">
+          <span class="text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 bg-slate-800/80 backdrop-blur text-blue-300 rounded-lg border border-slate-700 shadow-sm">8 Besar (Q - X)</span>
+        </div>
+        <div id="round-2-matches" class="flex flex-col justify-around h-[900px]"></div>
+      </div>
+
+      <!-- Round 3: Semi Final (Y-AB) -->
+      <div id="column-r3" class="flex flex-col gap-6 w-64 z-10 py-4">
+        <div class="text-center mb-4 no-print">
+          <span class="text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 bg-slate-800/80 backdrop-blur text-purple-300 rounded-lg border border-slate-700 shadow-sm">Semi Final (Y - AB)</span>
+        </div>
+        <div id="round-3-matches" class="flex flex-col justify-around h-[900px]"></div>
+      </div>
+
+      <!-- Round 4: Final (AC-AD) -->
+      <div id="column-r4" class="flex flex-col gap-6 w-64 z-10 py-4">
+        <div class="text-center mb-4 no-print">
+          <span class="text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 bg-amber-500/10 backdrop-blur text-amber-400 rounded-lg border border-amber-500/20 shadow-sm">Final (AC - AD)</span>
+        </div>
+        <div class="relative h-[900px]">
+          <div class="flex h-full items-center justify-center">
+            <div class="relative">
+              <div class="absolute -top-7 left-0 right-0 text-[10px] font-bold text-center text-amber-400 uppercase tracking-widest drop-shadow-md">Perebutan Juara 1</div>
+              <div id="round-4-matches"></div>
+            </div>
+          </div>
+          <!-- Podium Section (Juara 1, 2, & Juara 3 Bersama) -->
+          <div class="absolute left-0 right-0 top-[620px] bg-gradient-to-b from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-amber-500/30 rounded-xl p-4 shadow-xl">
+            <div class="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-[0_0_14px_rgba(251,191,36,0.4)]">
+              <i class="fa-solid fa-trophy text-white text-sm drop-shadow-md"></i>
+            </div>
+            
+            <div class="mt-4 mb-4 text-center">
+              <div class="text-[9px] uppercase font-extrabold tracking-widest text-amber-500 mb-1">CHAMPION (JUARA 1)</div>
+              <div id="podium-1-name" class="font-extrabold text-white text-base truncate drop-shadow-sm">---</div>
+              <div id="podium-1-cont" class="text-[10px] font-medium text-slate-400 truncate mt-1">---</div>
+            </div>
+            
+            <div class="w-full h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent mb-3"></div>
+            
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+                <div class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center text-slate-800 text-xs font-bold shadow-md shrink-0">2</div>
+                <div class="min-w-0">
+                  <div class="text-[8px] uppercase font-bold text-slate-400">Runner Up (Juara 2)</div>
+                  <div id="podium-2-name" class="font-bold text-xs text-slate-200 truncate">---</div>
+                </div>
+              </div>
+              
+              <div id="bronze-container-1" class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+                <div class="w-6 h-6 rounded-full bg-[#cd7f32] flex items-center justify-center text-white text-xs font-bold shadow-md shrink-0">3</div>
+                <div class="min-w-0">
+                  <div class="text-[8px] uppercase font-bold text-amber-500/70">Juara 3 Bersama</div>
+                  <div id="podium-3a-name" class="font-bold text-xs text-slate-200 truncate">---</div>
+                </div>
+              </div>
+              
+              <div id="bronze-container-2" class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+                <div class="w-6 h-6 rounded-full bg-[#cd7f32] flex items-center justify-center text-white text-xs font-bold shadow-md shrink-0">3</div>
+                <div class="min-w-0">
+                  <div class="text-[8px] uppercase font-bold text-amber-500/70">Juara 3 Bersama</div>
+                  <div id="podium-3b-name" class="font-bold text-xs text-slate-200 truncate">---</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300" id="config-modal-content">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <h2 class="text-lg font-bold text-white tracking-wide"><i class="fa-solid fa-sliders text-indigo-400 mr-2"></i> Atur Slot Aktif (ON / OFF)</h2>
+        <button onclick="closeConfigModal()" class="text-slate-500 hover:text-white transition-colors bg-slate-800 hover:bg-rose-500 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto flex-1 custom-scrollbar bg-slate-900/80">
+        <div class="flex items-center justify-between mb-4 bg-slate-800/80 px-4 py-2.5 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-300">Nyalakan switch pada posisi slot yang ingin digunakan untuk jumlah peserta ini:</p>
+          <span id="config-counter-badge" class="px-2.5 py-1 bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-lg text-xs font-extrabold">0 Slot ON</span>
+        </div>
+        
+        <div class="space-y-6">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">16 Besar (A - P)</div>
+            <div class="grid grid-cols-4 gap-3" id="slots-checkbox-grid-r1"></div>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-blue-400 mb-2">8 Besar (Q - X)</div>
+            <div class="grid grid-cols-4 gap-3" id="slots-checkbox-grid-r2"></div>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-purple-400 mb-2">Semi Final (Y - AB)</div>
+            <div class="grid grid-cols-4 gap-3" id="slots-checkbox-grid-r3"></div>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-2">Final (AC - AD)</div>
+            <div class="grid grid-cols-2 gap-3" id="slots-checkbox-grid-r4"></div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
+        <button onclick="closeConfigModal()" class="px-4 py-2 bg-transparent hover:bg-slate-800 text-slate-300 font-semibold rounded-lg text-sm transition-colors">Batal</button>
+        <span id="slot-save-status" class="text-xs text-slate-400 self-center mr-auto"></span>
+        <button onclick="saveConfigModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-600/30 text-sm transition-all">Terapkan Pilihan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="manage-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
+      <div class="px-8 py-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <h2 class="text-xl font-bold text-white tracking-wide"><i class="fa-solid fa-users-gear text-indigo-400 mr-3"></i> Kelola Nama Peserta</h2>
+        <button onclick="closeModal()" class="text-slate-500 hover:text-white transition-colors bg-slate-800 hover:bg-rose-500 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-8 overflow-y-auto flex-1 custom-scrollbar bg-slate-900/80">
+        <p class="text-sm text-slate-400 mb-6">Atur nama dan kontingen untuk setiap slot peserta aktif.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="modal-inputs-grid"></div>
+      </div>
+      <div class="px-8 py-5 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-4">
+        <button onclick="closeModal()" class="px-5 py-2.5 bg-transparent hover:bg-slate-800 text-slate-300 font-semibold rounded-lg transition-colors">Batal</button>
+        <button onclick="saveModal()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-600/30 transition-all">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SLOTS_R1 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+    const SLOTS_R2 = ['Q','R','S','T','U','V','W','X'];
+    const SLOTS_R3 = ['Y','Z','AA','AB'];
+    const SLOTS_R4 = ['AC','AD'];
+
+    const DEFAULT_ACTIVE_SLOTS_BY_COUNT = {
+      2: ["AC", "AD"],
+      3: ["AA", "AB", "AC"],
+      4: ["Y", "Z", "AA", "AB"],
+      5: ["W", "X", "Y", "Z", "AA"],
+      6: ["Q", "R", "W", "X", "Z", "AA"],
+      7: ["S", "T", "U", "V", "W", "X", "Y"],
+      8: ["Q", "R", "S", "T", "U", "V", "W", "X"],
+      9: ["O", "P", "Q", "R", "S", "T", "U", "V", "W"],
+      10: ["G", "H", "O", "P", "Q", "R", "U", "V", "S", "W"],
+      11: ["G", "H", "K", "L", "O", "P", "Q", "R", "S", "U", "W"],
+      12: ["C", "D", "G", "H", "K", "L", "O", "P", "Q", "S", "U", "W"],
+      13: ["C", "D", "G", "H", "K", "L", "M", "N", "O", "P", "Q", "S", "U"],
+      14: ["C", "D", "E", "F", "G", "H", "K", "L", "M", "N", "O", "P", "Q", "U"],
+      15: ["C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"],
+      16: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
+    };
+    
+    const DEFAULT_PARTICIPANT_COUNT = 16;
+
+    let activeSlots = [];
+    let activeSlotsByCount = {};
+    let activeParticipantCount = 2;
+    let slotSwitchesVisible = false;
+    let bracket = {};
+
+    function initEmptyBracket() {
+      return {
+        r1: Array.from({length: 8}, () => ({ p1: {n:"", c:"", s:""}, p2: {n:"", c:"", s:""}, winner: null })),
+        r2: Array.from({length: 4}, () => ({ p1: {n:"", c:"", s:""}, p2: {n:"", c:"", s:""}, winner: null })),
+        r3: Array.from({length: 2}, () => ({ p1: {n:"", c:"", s:""}, p2: {n:"", c:"", s:""}, winner: null })),
+        r4: Array.from({length: 1}, () => ({ p1: {n:"", c:"", s:""}, p2: {n:"", c:"", s:""}, winner: null }))
+      };
+    }
+
+    function getDefaultActiveSlotsForCount(count) {
+      const numericCount = Number(count) || 2;
+      return DEFAULT_ACTIVE_SLOTS_BY_COUNT[numericCount] || SLOTS_R1.slice(0, Math.min(numericCount, 16));
+    }
+
+    function getRound1SlotLayoutForCount(count) {
+      return getDefaultActiveSlotsForCount(count).slice();
+    }
+
+    function normalizeActiveSlotsByCount(rawValue) {
+      const normalized = {};
+      const source = rawValue && typeof rawValue === 'object' ? rawValue : {};
+      const validAllSlots = new Set([...SLOTS_R1, ...SLOTS_R2, ...SLOTS_R3, ...SLOTS_R4]);
+
+      for (let count = 2; count <= 16; count++) {
+        const value = source[count];
+        let resolved = [];
+
+        if (Array.isArray(value)) {
+          resolved = value.filter(slot => typeof slot === 'string' && slot.trim() !== '' && validAllSlots.has(slot));
+        }
+
+        if (resolved.length === 0) {
+          resolved = getDefaultActiveSlotsForCount(count);
+        }
+
+        if (resolved.length < count) {
+          const fallback = getDefaultActiveSlotsForCount(count);
+          const nextSlots = [...resolved];
+          fallback.forEach(slot => {
+            if (!nextSlots.includes(slot)) nextSlots.push(slot);
+          });
+          resolved = nextSlots.slice(0, count);
+        }
+
+        if (resolved.length > count) {
+          resolved = resolved.slice(0, count);
+        }
+
+        normalized[count] = resolved;
+      }
+
+      return normalized;
+    }
+
+        function ensureDummyParticipantsForCurrentCount() {
+      const orderedActiveSlots = Array.isArray(activeSlots) ? activeSlots : [];
+      const slotToIndex = new Map();
+      orderedActiveSlots.forEach((slot, index) => {
+        slotToIndex.set(slot, index + 1);
+      });
+
+      for (let i = 0; i < bracket.r1.length; i++) {
+        const slot1 = SLOTS_R1[i * 2];
+        const slot2 = SLOTS_R1[(i * 2) + 1];
+        const match = bracket.r1[i];
+        if (!match) continue;
+
+        if (slotToIndex.has(slot1)) {
+          const participantNo = slotToIndex.get(slot1);
+          const current = match.p1 || { n: '', c: '', s: '' };
+          match.p1 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        } else {
+          match.p1 = { n: '(BYE)', c: '-', s: '' };
+        }
+
+        if (slotToIndex.has(slot2)) {
+          const participantNo = slotToIndex.get(slot2);
+          const current = match.p2 || { n: '', c: '', s: '' };
+          match.p2 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        } else {
+          match.p2 = { n: '(BYE)', c: '-', s: '' };
+        }
+      }
+
+      for (let i = 0; i < bracket.r2.length; i++) {
+        const slot1 = SLOTS_R2[i * 2];
+        const slot2 = SLOTS_R2[i * 2 + 1];
+        const match = bracket.r2[i];
+        if (!match) continue;
+
+        if (slotToIndex.has(slot1)) {
+          const participantNo = slotToIndex.get(slot1);
+          const current = match.p1 || { n: '', c: '', s: '' };
+          match.p1 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+
+        if (slotToIndex.has(slot2)) {
+          const participantNo = slotToIndex.get(slot2);
+          const current = match.p2 || { n: '', c: '', s: '' };
+          match.p2 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+      }
+
+      for (let i = 0; i < bracket.r3.length; i++) {
+        const slot1 = SLOTS_R3[i * 2];
+        const slot2 = SLOTS_R3[i * 2 + 1];
+        const match = bracket.r3[i];
+        if (!match) continue;
+
+        if (slotToIndex.has(slot1)) {
+          const participantNo = slotToIndex.get(slot1);
+          const current = match.p1 || { n: '', c: '', s: '' };
+          match.p1 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+
+        if (slotToIndex.has(slot2)) {
+          const participantNo = slotToIndex.get(slot2);
+          const current = match.p2 || { n: '', c: '', s: '' };
+          match.p2 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+      }
+
+      if (bracket.r4 && bracket.r4[0]) {
+        const slot1 = SLOTS_R4[0];
+        const slot2 = SLOTS_R4[1];
+        const match = bracket.r4[0];
+        if (!match) return;
+
+        if (slotToIndex.has(slot1)) {
+          const participantNo = slotToIndex.get(slot1);
+          const current = match.p1 || { n: '', c: '', s: '' };
+          match.p1 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+
+        if (slotToIndex.has(slot2)) {
+          const participantNo = slotToIndex.get(slot2);
+          const current = match.p2 || { n: '', c: '', s: '' };
+          match.p2 = { n: current.n && current.n !== '(BYE)' && current.n.trim() ? current.n : `Peserta ${participantNo}`, c: current.c && current.c.trim() ? current.c : `Dummy ${participantNo}`, s: current.s || '' };
+        }
+      }
+    }
+
+
+    function populateParticipantDropdown() {
+      const selectElem = document.getElementById('participant-count-select');
+      if (!selectElem) return;
+      let html = '';
+      for (let i = 2; i <= 16; i++) {
+        html += `<option value="${i}">${i} Peserta</option>`;
+      }
+      selectElem.innerHTML = html;
+      selectElem.value = String(DEFAULT_PARTICIPANT_COUNT);
+    }
+
+    function changeParticipantCount(val) {
+      const count = parseInt(val, 10);
+      activeParticipantCount = count;
+
+      if (!Array.isArray(activeSlotsByCount[count]) || activeSlotsByCount[count].length === 0) {
+        activeSlotsByCount[count] = getDefaultActiveSlotsForCount(count);
+      }
+
+      const normalizedCountSlots = normalizeActiveSlotsByCount(activeSlotsByCount)[count] || getDefaultActiveSlotsForCount(count);
+      activeSlotsByCount[count] = normalizedCountSlots;
+      activeSlots = [...normalizedCountSlots];
+      bracket = initEmptyBracket();
+      ensureDummyParticipantsForCurrentCount();
+      saveState();
+      renderAll();
+    }
+
+    function updateDropdownSelection() {
+      const selectElem = document.getElementById('participant-count-select');
+      if (!selectElem) return;
+      selectElem.value = String(activeParticipantCount);
+    }
+
+    function toggleSlotSwitches() {
+      slotSwitchesVisible = !slotSwitchesVisible;
+      renderAll();
+    }
+
+    function toggleAdvancedControls() {
+      const panel = document.getElementById('extra-controls-panel');
+      const btn = document.getElementById('toggle-advanced-btn');
+      if (!panel) return;
+      const isHidden = panel.classList.contains('hidden');
+      if (isHidden) {
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+        if (btn) btn.classList.add('bg-slate-700', 'text-indigo-300');
+      } else {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+        if (btn) btn.classList.remove('bg-slate-700', 'text-indigo-300');
+      }
+    }
+
+    function renderSlotToggle(slot) {
+      if (!slotSwitchesVisible) return '';
+      const isActive = activeSlots.includes(slot);
+      return `<label class="slot-toggle" title="Aktifkan atau nonaktifkan posisi ${slot}">
+        <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleActiveSlot('${slot}', this.checked)">
+        <span class="slot-toggle-track"><span class="slot-toggle-thumb"></span></span>
+      </label>`;
+    }
+
+    async function toggleActiveSlot(slot, isActive) {
+      const nextSlots = activeSlots.filter(activeSlot => activeSlot !== slot);
+      if (isActive) nextSlots.push(slot);
+
+      activeSlots = nextSlots;
+      activeSlotsByCount[activeParticipantCount] = nextSlots;
+      saveState();
+      renderAll();
+
+      try {
+        await window.baganStorage?.saveActiveSlotsByCount(activeSlotsByCount);
+      } catch (error) {
+        console.error('Gagal menyimpan posisi slot:', error);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('custom_bracket_data_16_ad_v2', JSON.stringify(bracket));
+      evaluateByesAndProgression();
+      updatePodium();
+      requestAnimationFrame(drawLines);
+    }
+
+    function resetData() {
+      if(confirm("Yakin ingin mereset seluruh data bagan?")) {
+        activeSlots = getDefaultActiveSlotsForCount(activeParticipantCount);
+        activeSlotsByCount[activeParticipantCount] = [...activeSlots];
+        bracket = initEmptyBracket();
+        ensureDummyParticipantsForCurrentCount();
+        saveState();
+        renderAll();
+        updateDropdownSelection();
+      }
+    }
+
+    function escapeHTML(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function evaluateByesAndProgression() {
+      for (let i = 0; i < 8; i++) {
+        const s1 = SLOTS_R1[i * 2];
+        const s2 = SLOTS_R1[(i * 2) + 1];
+        const a1 = !!s1 && activeSlots.includes(s1);
+        const a2 = !!s2 && activeSlots.includes(s2);
+
+        const m = bracket.r1[i];
+        if (!m) continue;
+
+        if (a1 && !a2) {
+          m.winner = 1;
+          passWinnerToNext('r1', i, 1);
+        } else if (!a1 && a2) {
+          m.winner = 2;
+          passWinnerToNext('r1', i, 2);
+        } else if (!a1 && !a2) {
+          m.winner = null;
+          passWinnerToNext('r1', i, null);
+        }
+      }
+    }
+
+    function passWinnerToNext(roundId, matchIdx, playerNum) {
+      const match = bracket[roundId][matchIdx];
+      const winnerData = playerNum === 1 ? match.p1 : (playerNum === 2 ? match.p2 : {n:'', c:'', s:''});
+      const cleanWinner = { ...winnerData, s: '' };
+
+      const roundsOrder = ['r1', 'r2', 'r3', 'r4'];
+      const rIndex = roundsOrder.indexOf(roundId);
+
+      if (rIndex !== -1 && rIndex < roundsOrder.length - 1) {
+        const nextRoundId = roundsOrder[rIndex + 1];
+        const nextMatchIdx = Math.floor(matchIdx / 2);
+        const slotKey = (matchIdx % 2 === 0) ? 'p1' : 'p2';
+        
+        let nextSlotName = '';
+        if (nextRoundId === 'r2') nextSlotName = SLOTS_R2[nextMatchIdx * 2 + (slotKey === 'p2' ? 1 : 0)];
+        else if (nextRoundId === 'r3') nextSlotName = SLOTS_R3[nextMatchIdx * 2 + (slotKey === 'p2' ? 1 : 0)];
+        else if (nextRoundId === 'r4') nextSlotName = SLOTS_R4[nextMatchIdx * 2 + (slotKey === 'p2' ? 1 : 0)];
+
+        if (activeSlots.includes(nextSlotName) && playerNum === null) {
+          return;
+        }
+
+        if (bracket[nextRoundId] && bracket[nextRoundId][nextMatchIdx]) {
+          bracket[nextRoundId][nextMatchIdx][slotKey] = cleanWinner;
+        }
+      }
+    }
+
+    let matchPartaiMap = {};
+
+    function calculatePartaiNumbers() {
+      matchPartaiMap = {};
+      let counter = 1;
+      let producesWinner = {};
+      
+      const roundsOrder = [
+        { id: 'r1', slots: SLOTS_R1 },
+        { id: 'r2', slots: SLOTS_R2 },
+        { id: 'r3', slots: SLOTS_R3 },
+        { id: 'r4', slots: SLOTS_R4 }
+      ];
+      
+      roundsOrder.forEach((r, rIndex) => {
+        const isR4 = r.id === 'r4';
+        const matchCount = isR4 ? 1 : (bracket[r.id] ? bracket[r.id].length : 0);
+        
+        for (let i = 0; i < matchCount; i++) {
+          let slot1, slot2;
+          if (isR4) {
+            slot1 = SLOTS_R4[0];
+            slot2 = SLOTS_R4[1];
+          } else {
+            slot1 = r.slots[i * 2];
+            slot2 = r.slots[i * 2 + 1];
+          }
+          
+          let s1Populated = activeSlots.includes(slot1);
+          if (!s1Populated && rIndex > 0) {
+            const prevRound = roundsOrder[rIndex - 1].id;
+            s1Populated = producesWinner[`${prevRound}-${i * 2}`] || false;
+          }
+          
+          let s2Populated = activeSlots.includes(slot2);
+          if (!s2Populated && rIndex > 0) {
+            const prevRound = roundsOrder[rIndex - 1].id;
+            s2Populated = producesWinner[`${prevRound}-${i * 2 + 1}`] || false;
+          }
+          
+          const matchKey = `${r.id}-${i}`;
+          if (s1Populated && s2Populated) {
+            matchPartaiMap[matchKey] = counter++;
+            producesWinner[matchKey] = true;
+          } else if (s1Populated || s2Populated) {
+            producesWinner[matchKey] = true;
+          } else {
+            producesWinner[matchKey] = false;
+          }
+        }
+      });
+    }
+
+    function renderMatch(roundId, matchIdx) {
+      const match = bracket[roundId][matchIdx];
+      if (!match) return '';
+      
+      let slot1 = '', slot2 = '';
+      if (roundId === 'r1') {
+        slot1 = SLOTS_R1[matchIdx * 2];
+        slot2 = SLOTS_R1[matchIdx * 2 + 1];
+      } else if (roundId === 'r2') {
+        slot1 = SLOTS_R2[matchIdx * 2];
+        slot2 = SLOTS_R2[matchIdx * 2 + 1];
+      } else if (roundId === 'r3') {
+        slot1 = SLOTS_R3[matchIdx * 2];
+        slot2 = SLOTS_R3[matchIdx * 2 + 1];
+      } else if (roundId === 'r4') {
+        slot1 = SLOTS_R4[0];
+        slot2 = SLOTS_R4[1];
+      }
+
+      const hasRealP1 = Boolean(match.p1 && match.p1.n && match.p1.n !== '(BYE)' && match.p1.n.trim() !== '');
+      const hasRealP2 = Boolean(match.p2 && match.p2.n && match.p2.n !== '(BYE)' && match.p2.n.trim() !== '');
+      
+      const isSlot1Configured = activeSlots.includes(slot1);
+      const isSlot2Configured = activeSlots.includes(slot2);
+      
+      const isMatchDisabled = !isSlot1Configured && !isSlot2Configured && !hasRealP1 && !hasRealP2;
+
+      const w1 = match.winner === 1;
+      const w2 = match.winner === 2;
+      
+      const p1Active = isSlot1Configured || hasRealP1 || (roundId !== 'r1' && !isMatchDisabled);
+      const p2Active = isSlot2Configured || hasRealP2 || (roundId !== 'r1' && !isMatchDisabled);
+
+      const canCrown1 = hasRealP1;
+      const canCrown2 = hasRealP2;
+
+      const p1Class = w1 ? 'bg-emerald-900/30' : 'hover:bg-slate-700/40';
+      const p2Class = w2 ? 'bg-emerald-900/30' : 'hover:bg-slate-700/40';
+      const cardBorder = (w1 || w2) ? 'border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]' : 'border-slate-600/60 shadow-xl';
+
+      const partaiNo = matchPartaiMap[`${roundId}-${matchIdx}`];
+      const partaiLabel = partaiNo ? `<div class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 text-[9px] font-extrabold px-3 py-0.5 rounded-full shadow-lg z-20 border border-amber-200/50 uppercase tracking-widest">Partai ${partaiNo}</div>` : '';
+
+      return `
+        <div class="match-card w-full bg-slate-800/80 backdrop-blur-md rounded-xl flex flex-col overflow-visible border ${cardBorder} transition-all duration-300 ${isMatchDisabled ? 'match-disabled' : ''} relative" id="match-${roundId}-${matchIdx}">
+          ${partaiLabel}
+          <!-- Player 1 Slot -->
+          <div class="flex items-stretch h-[3.25rem] border-b border-slate-700/60 relative group transition-colors rounded-t-xl ${p1Class}" id="slot-${roundId}-${matchIdx}-p1">
+            ${w1 ? `<div class="winner-indicator absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] rounded-tl-xl z-10"></div>` : ''}
+            <div class="w-8 flex items-center justify-center bg-slate-900/50 border-r border-slate-700/50 text-[10px] font-bold text-indigo-300 rounded-tl-xl">${slot1}</div>
+            ${renderSlotToggle(slot1)}
+            
+            <div class="flex-1 flex flex-col justify-center px-3 min-w-0">
+              <input type="text" class="seamless-input text-[13px] ${p1Active ? (w1 ? 'text-white font-black drop-shadow-sm' : (hasRealP1 ? 'text-white font-bold' : 'text-slate-200 font-bold')) : 'text-slate-500 italic font-semibold'}" placeholder="${p1Active ? 'Nama Peserta' : '(BYE / Nonaktif)'}" value="${escapeHTML(match.p1.n)}" ${!p1Active ? 'disabled' : ''} onchange="updateData('${roundId}', ${matchIdx}, 'p1', 'n', this.value)">
+              <input type="text" class="seamless-input text-[10px] ${w1 ? 'text-sky-200 font-semibold' : (hasRealP1 ? 'text-sky-300 font-medium' : 'text-sky-400 font-medium')} h-4 leading-none" placeholder="Kontingen" value="${escapeHTML(match.p1.c)}" ${!p1Active ? 'disabled' : ''} onchange="updateData('${roundId}', ${matchIdx}, 'p1', 'c', this.value)">
+            </div>
+            
+            <div class="w-10 bg-slate-900/40 flex items-center justify-center border-l border-slate-700/50">
+              <input type="text" class="seamless-input text-center text-sm font-black ${w1 ? 'text-emerald-400 drop-shadow-sm' : 'text-slate-400'}" placeholder="-" value="${escapeHTML(match.p1.s)}" onchange="updateData('${roundId}', ${matchIdx}, 'p1', 's', this.value)">
+            </div>
+            
+            <button onclick="setWinner('${roundId}', ${matchIdx}, 1)" class="w-9 flex items-center justify-center border-l border-slate-700/50 transition-colors rounded-tr-xl ${w1 ? 'bg-emerald-500/25 text-emerald-300' : 'bg-slate-800 text-slate-500 hover:bg-emerald-500/15 hover:text-emerald-400'}" title="Tetapkan Pemenang" ${!canCrown1 ? 'disabled' : ''}>
+              <i class="fa-solid fa-crown text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Player 2 Slot -->
+          <div class="flex items-stretch h-[3.25rem] relative group transition-colors rounded-b-xl ${p2Class}" id="slot-${roundId}-${matchIdx}-p2">
+            ${w2 ? `<div class="winner-indicator absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] rounded-bl-xl z-10"></div>` : ''}
+            <div class="w-8 flex items-center justify-center bg-slate-900/50 border-r border-slate-700/50 text-[10px] font-bold text-indigo-300 rounded-bl-xl">${slot2}</div>
+            ${renderSlotToggle(slot2)}
+            
+            <div class="flex-1 flex flex-col justify-center px-3 min-w-0">
+              <input type="text" class="seamless-input text-[13px] ${p2Active ? (w2 ? 'text-white font-black drop-shadow-sm' : (hasRealP2 ? 'text-white font-bold' : 'text-slate-200 font-bold')) : 'text-slate-500 italic font-semibold'}" placeholder="${p2Active ? 'Nama Peserta' : '(BYE / Nonaktif)'}" value="${escapeHTML(match.p2.n)}" ${!p2Active ? 'disabled' : ''} onchange="updateData('${roundId}', ${matchIdx}, 'p2', 'n', this.value)">
+              <input type="text" class="seamless-input text-[10px] ${w2 ? 'text-sky-200 font-semibold' : (hasRealP2 ? 'text-sky-300 font-medium' : 'text-sky-400 font-medium')} h-4 leading-none" placeholder="Kontingen" value="${escapeHTML(match.p2.c)}" ${!p2Active ? 'disabled' : ''} onchange="updateData('${roundId}', ${matchIdx}, 'p2', 'c', this.value)">
+            </div>
+            
+            <div class="w-10 bg-slate-900/40 flex items-center justify-center border-l border-slate-700/50">
+              <input type="text" class="seamless-input text-center text-sm font-black ${w2 ? 'text-emerald-400 drop-shadow-sm' : 'text-slate-400'}" placeholder="-" value="${escapeHTML(match.p2.s)}" onchange="updateData('${roundId}', ${matchIdx}, 'p2', 's', this.value)">
+            </div>
+            
+            <button onclick="setWinner('${roundId}', ${matchIdx}, 2)" class="w-9 flex items-center justify-center border-l border-slate-700/50 transition-colors rounded-br-xl ${w2 ? 'bg-emerald-500/25 text-emerald-300' : 'bg-slate-800 text-slate-500 hover:bg-emerald-500/15 hover:text-emerald-400'}" title="Tetapkan Pemenang" ${!canCrown2 ? 'disabled' : ''}>
+              <i class="fa-solid fa-crown text-xs"></i>
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      calculatePartaiNumbers();
+      const r1Elem = document.getElementById('round-1-matches');
+      const r2Elem = document.getElementById('round-2-matches');
+      const r3Elem = document.getElementById('round-3-matches');
+      const r4Elem = document.getElementById('round-4-matches');
+
+      if (r1Elem && bracket.r1) r1Elem.innerHTML = bracket.r1.map((_, i) => renderMatch('r1', i)).join('');
+      if (r2Elem && bracket.r2) r2Elem.innerHTML = bracket.r2.map((_, i) => renderMatch('r2', i)).join('');
+      if (r3Elem && bracket.r3) r3Elem.innerHTML = bracket.r3.map((_, i) => renderMatch('r3', i)).join('');
+      if (r4Elem && bracket.r4) r4Elem.innerHTML = renderMatch('r4', 0);
+
+      updatePodium();
+      setTimeout(() => requestAnimationFrame(drawLines), 100);
+    }
+
+    function updateData(roundId, matchIdx, playerKey, field, value) {
+      if(bracket[roundId] && bracket[roundId][matchIdx]) {
+        bracket[roundId][matchIdx][playerKey][field] = value;
+        saveState();
+      }
+    }
+
+    function setWinner(roundId, matchIdx, playerNum) {
+      const match = bracket[roundId][matchIdx];
+      if (match.winner === playerNum) match.winner = null;
+      else match.winner = playerNum;
+
+      passWinnerToNext(roundId, matchIdx, match.winner);
+
+      saveState();
+      renderAll(); 
+    }
+
+    function updatePodium() {
+      const f = bracket.r4 ? bracket.r4[0] : null;
+
+      if (f && f.winner) {
+        const champ = f.winner === 1 ? f.p1 : f.p2;
+        const runner = f.winner === 1 ? f.p2 : f.p1;
+        document.getElementById('podium-1-name').innerText = champ.n || "---";
+        document.getElementById('podium-1-cont').innerText = champ.c || "---";
+        document.getElementById('podium-2-name').innerText = runner.n || "---";
+      } else {
+        document.getElementById('podium-1-name').innerText = "---";
+        document.getElementById('podium-1-cont').innerText = "---";
+        document.getElementById('podium-2-name').innerText = "---";
+      }
+
+      const sf1 = bracket.r3 ? bracket.r3[0] : null;
+      const sf2 = bracket.r3 ? bracket.r3[1] : null;
+      
+      if (sf1 && sf1.winner) {
+        const loser1 = sf1.winner === 1 ? sf1.p2 : sf1.p1;
+        document.getElementById('podium-3a-name').innerText = loser1.n || "---";
+      } else {
+        document.getElementById('podium-3a-name').innerText = "---";
+      }
+
+      if (sf2 && sf2.winner) {
+        const loser2 = sf2.winner === 1 ? sf2.p2 : sf2.p1;
+        document.getElementById('podium-3b-name').innerText = loser2.n || "---";
+      } else {
+        document.getElementById('podium-3b-name').innerText = "---";
+      }
+    }
+
+    function shuffleParticipants() {
+      let participants = [];
+      
+      const rounds = [
+        { id: 'r1', slots: SLOTS_R1 },
+        { id: 'r2', slots: SLOTS_R2 },
+        { id: 'r3', slots: SLOTS_R3 },
+        { id: 'r4', slots: SLOTS_R4 }
+      ];
+
+      activeSlots.forEach(slot => {
+        for (const round of rounds) {
+          const idx = round.slots.indexOf(slot);
+          if (idx !== -1) {
+            const matchIdx = Math.floor(idx / 2);
+            const playerSlot = idx % 2 === 0 ? 'p1' : 'p2';
+            if(bracket[round.id] && bracket[round.id][matchIdx]) {
+              const p = bracket[round.id][matchIdx][playerSlot];
+              if (p && p.n && p.n !== '(BYE)') participants.push({...p});
+            }
+            break;
+          }
+        }
+      });
+
+      for (let i = participants.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [participants[i], participants[j]] = [participants[j], participants[i]];
+      }
+
+      rounds.forEach(round => {
+        bracket[round.id].forEach((m, idx) => {
+          const s1 = round.slots[idx * 2];
+          const s2 = round.slots[(idx * 2) + 1];
+          if (activeSlots.includes(s1)) {
+            m.p1 = participants.shift() || {n:'', c:'', s:''};
+          } else {
+            m.p1 = {n: round.id === 'r1' ? '(BYE)' : '', c: round.id === 'r1' ? '-' : '', s:''};
+          }
+          if (activeSlots.includes(s2)) {
+            m.p2 = participants.shift() || {n:'', c:'', s:''};
+          } else {
+            m.p2 = {n: round.id === 'r1' ? '(BYE)' : '', c: round.id === 'r1' ? '-' : '', s:''};
+          }
+          m.winner = null;
+        });
+      });
+
+      saveState();
+      renderAll();
+    }
+
+    function drawLines() {
+      const svg = document.getElementById('lines-svg');
+      const wrapper = document.getElementById('bracket-wrapper');
+      if (!svg || !wrapper) return;
+      
+      const wrapperRect = wrapper.getBoundingClientRect();
+      let svgContent = '';
+
+      function connectRounds(parentRound, childRound, parentMatchCount) {
+        for (let i = 0; i < parentMatchCount; i++) {
+          const pMatchId = `match-${parentRound}-${i}`;
+          const cMatchIdx = Math.floor(i / 2);
+          const cSlotKey = (i % 2 === 0) ? 'p1' : 'p2';
+          const cSlotId = `slot-${childRound}-${cMatchIdx}-${cSlotKey}`;
+
+          const pCard = document.getElementById(pMatchId);
+          const cSlot = document.getElementById(cSlotId);
+
+          if (pCard && cSlot) {
+            const pRect = pCard.getBoundingClientRect();
+            const cRect = cSlot.getBoundingClientRect();
+
+            const startX = pRect.right - wrapperRect.left;
+            const startY = pRect.top + (pRect.height / 2) - wrapperRect.top;
+            const endX = cRect.left - wrapperRect.left;
+            const endY = cRect.top + (cRect.height / 2) - wrapperRect.top;
+            const midX = startX + (endX - startX) / 2;
+
+            const match = bracket[parentRound] ? bracket[parentRound][i] : null;
+            const isActive = match && match.winner !== null;
+            
+            const strokeColor = isActive ? '#10b981' : '#475569'; 
+            const strokeWidth = isActive ? '2.5' : '1.5';
+            const shadow = isActive ? 'filter="drop-shadow(0 0 4px rgba(16,185,129,0.9))"' : '';
+
+            // Garis lurus tegas standar untuk event resmi
+            const pathData = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+            svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round" ${shadow} class="transition-all duration-300" />`;
+            
+            if (isActive) {
+              svgContent += `<circle cx="${startX}" cy="${startY}" r="3.5" fill="#10b981" ${shadow}/>`;
+              svgContent += `<circle cx="${endX}" cy="${endY}" r="3.5" fill="#10b981" ${shadow}/>`;
+            }
+          }
+        }
+      }
+
+      connectRounds('r1', 'r2', 8);
+      connectRounds('r2', 'r3', 4);
+      connectRounds('r3', 'r4', 2);
+
+      svg.innerHTML = svgContent;
+    }
+
+    function openConfigModal() {
+      const modal = document.getElementById('config-modal');
+      const content = document.getElementById('config-modal-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      }, 10);
+
+      renderConfigCheckboxes();
+    }
+
+    function renderConfigCheckboxes() {
+      const renderGroup = (slots, containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let html = '';
+        slots.forEach(slot => {
+          const isChecked = activeSlots.includes(slot);
+          html += `
+            <label class="flex items-center gap-2.5 bg-slate-800 hover:bg-slate-750 p-3 rounded-xl border border-slate-700 cursor-pointer transition-colors">
+              <span class="text-sm font-bold text-white">Posisi ${slot}</span>
+              <span class="relative ml-auto inline-flex h-6 w-11 shrink-0">
+                <input type="checkbox" id="chk-slot-${slot}" value="${slot}" ${isChecked ? 'checked' : ''} onchange="updateConfigCounter()" class="peer sr-only">
+                <span class="absolute inset-0 cursor-pointer rounded-full bg-slate-700 transition-colors peer-checked:bg-emerald-500"></span>
+                <span class="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+              </span>
+            </label>
+          `;
+        });
+        container.innerHTML = html;
+      };
+
+      renderGroup(SLOTS_R1, 'slots-checkbox-grid-r1');
+      renderGroup(SLOTS_R2, 'slots-checkbox-grid-r2');
+      renderGroup(SLOTS_R3, 'slots-checkbox-grid-r3');
+      renderGroup(SLOTS_R4, 'slots-checkbox-grid-r4');
+      updateConfigCounter();
+    }
+
+    function updateConfigCounter() {
+      let count = 0;
+      const allSlots = [...SLOTS_R1, ...SLOTS_R2, ...SLOTS_R3, ...SLOTS_R4];
+      allSlots.forEach(slot => {
+        const chk = document.getElementById(`chk-slot-${slot}`);
+        if (chk && chk.checked) count++;
+      });
+      const badge = document.getElementById('config-counter-badge');
+      if (badge) {
+        badge.innerText = `${count} Slot ON`;
+      }
+    }
+
+    function closeConfigModal() {
+      const modal = document.getElementById('config-modal');
+      const content = document.getElementById('config-modal-content');
+      modal.classList.add('opacity-0');
+      content.classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    async function saveConfigModal() {
+      let newActive = [];
+      const allSlots = [...SLOTS_R1, ...SLOTS_R2, ...SLOTS_R3, ...SLOTS_R4];
+      allSlots.forEach(slot => {
+        const chk = document.getElementById(`chk-slot-${slot}`);
+        if (chk && chk.checked) {
+          newActive.push(slot);
+        }
+      });
+
+      if (newActive.length < 2) {
+        alert("Pilih minimal 2 slot aktif untuk membuat bagan.");
+        return;
+      }
+
+      activeSlots = newActive;
+      activeSlotsByCount[activeParticipantCount] = newActive;
+
+      bracket.r1.forEach((m, idx) => {
+        const s1 = SLOTS_R1[idx * 2];
+        const s2 = SLOTS_R1[(idx * 2) + 1];
+        if (!activeSlots.includes(s1)) {
+          m.p1 = { n: '(BYE)', c: '-', s: '' };
+        }
+        if (!activeSlots.includes(s2)) {
+          m.p2 = { n: '(BYE)', c: '-', s: '' };
+        }
+      });
+
+      saveState();
+      const slotSaveStatus = document.getElementById('slot-save-status');
+      if (window.baganStorage) {
+        try {
+          await window.baganStorage.saveActiveSlotsByCount(activeSlotsByCount);
+          if (slotSaveStatus) slotSaveStatus.textContent = `Slot ${activeParticipantCount} peserta tersimpan`;
+        } catch (error) {
+          console.error('Gagal menyimpan posisi slot:', error);
+          if (slotSaveStatus) slotSaveStatus.textContent = 'Gagal menyimpan ke database';
+        }
+      }
+      renderAll();
+      closeConfigModal();
+    }
+
+    function openModal() {
+      const modal = document.getElementById('manage-modal');
+      const content = document.getElementById('modal-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      }, 10);
+
+      const grid = document.getElementById('modal-inputs-grid');
+      let html = '';
+      
+      const rounds = [
+        { id: 'r1', slots: SLOTS_R1 },
+        { id: 'r2', slots: SLOTS_R2 },
+        { id: 'r3', slots: SLOTS_R3 },
+        { id: 'r4', slots: SLOTS_R4 }
+      ];
+
+      rounds.forEach(round => {
+        bracket[round.id].forEach((match, idx) => {
+          const slot1 = round.slots[idx * 2];
+          const slot2 = round.slots[(idx * 2) + 1];
+          const a1 = activeSlots.includes(slot1);
+          const a2 = activeSlots.includes(slot2);
+
+          if (!a1 && !a2) return;
+
+          let title = round.id === 'r1' ? '16 BESAR' : (round.id === 'r2' ? '8 BESAR' : (round.id === 'r3' ? 'SEMI FINAL' : 'FINAL'));
+
+          html += `
+            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-inner">
+              <div class="text-[11px] font-extrabold text-indigo-400 mb-3 uppercase tracking-wider">${title} - MATCH ${idx+1}</div>
+              
+              ${a1 ? `
+              <div class="flex gap-3 mb-3 items-center">
+                <span class="text-xs font-bold text-slate-400 w-6">${slot1}</span>
+                <input type="text" id="m_n_${round.id}_${idx}_1" value="${escapeHTML(match.p1?.n)}" class="flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm font-semibold text-white focus:border-indigo-500 focus:outline-none" placeholder="Nama Peserta">
+                <input type="text" id="m_c_${round.id}_${idx}_1" value="${escapeHTML(match.p1?.c)}" class="w-1/3 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none" placeholder="Kontingen">
+              </div>` : `<div class="text-xs text-slate-500 italic mb-2">Slot ${slot1}: Nonaktif (BYE)</div>`}
+
+              ${a2 ? `
+              <div class="flex gap-3 items-center">
+                <span class="text-xs font-bold text-slate-400 w-6">${slot2}</span>
+                <input type="text" id="m_n_${round.id}_${idx}_2" value="${escapeHTML(match.p2?.n)}" class="flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm font-semibold text-white focus:border-indigo-500 focus:outline-none" placeholder="Nama Peserta">
+                <input type="text" id="m_c_${round.id}_${idx}_2" value="${escapeHTML(match.p2?.c)}" class="w-1/3 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none" placeholder="Kontingen">
+              </div>` : `<div class="text-xs text-slate-500 italic">Slot ${slot2}: Nonaktif (BYE)</div>`}
+            </div>
+          `;
+        });
+      });
+      grid.innerHTML = html;
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('manage-modal');
+      const content = document.getElementById('modal-content');
+      modal.classList.add('opacity-0');
+      content.classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    function saveModal() {
+      const rounds = [
+        { id: 'r1', slots: SLOTS_R1 },
+        { id: 'r2', slots: SLOTS_R2 },
+        { id: 'r3', slots: SLOTS_R3 },
+        { id: 'r4', slots: SLOTS_R4 }
+      ];
+
+      rounds.forEach(round => {
+        bracket[round.id].forEach((match, idx) => {
+          const slot1 = round.slots[idx * 2];
+          const slot2 = round.slots[(idx * 2) + 1];
+          
+          if (activeSlots.includes(slot1)) {
+            const n1Elem = document.getElementById(`m_n_${round.id}_${idx}_1`);
+            const c1Elem = document.getElementById(`m_c_${round.id}_${idx}_1`);
+            if (n1Elem && match.p1) match.p1.n = n1Elem.value;
+            if (c1Elem && match.p1) match.p1.c = c1Elem.value;
+          }
+
+          if (activeSlots.includes(slot2)) {
+            const n2Elem = document.getElementById(`m_n_${round.id}_${idx}_2`);
+            const c2Elem = document.getElementById(`m_c_${round.id}_${idx}_2`);
+            if (n2Elem && match.p2) match.p2.n = n2Elem.value;
+            if (c2Elem && match.p2) match.p2.c = c2Elem.value;
+          }
+        });
+      });
+      saveState();
+      renderAll();
+      closeModal();
+    }
+
+    async function initApp() {
+      populateParticipantDropdown();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramCount = urlParams.get('count');
+      const paramClass = urlParams.get('class');
+      const paramCat = urlParams.get('cat');
+      
+      const savedCount = paramCount ? parseInt(paramCount, 10) : parseInt(localStorage.getItem('custom_bracket_participant_count'), 10);
+      const initialCount = (!isNaN(savedCount) && savedCount >= 2 && savedCount <= 16) ? savedCount : DEFAULT_PARTICIPANT_COUNT;
+      
+      const className = paramClass || localStorage.getItem('custom_bracket_class_name') || '';
+      const category = paramCat || localStorage.getItem('custom_bracket_category') || '';
+      
+      if (className) {
+        const titleElem = document.getElementById('bracket-page-title');
+        const subElem = document.getElementById('bracket-page-subtitle');
+        const catStr = category ? ` (${category.toUpperCase()})` : '';
+        if (titleElem) titleElem.textContent = `${className.toUpperCase()}${catStr}`;
+        if (subElem) subElem.textContent = 'Bagan Pertandingan Resmi · Single Elimination';
+        document.title = `Bagan - ${className}${catStr}`;
+      }
+
+      activeParticipantCount = initialCount;
+      const selectElem = document.getElementById('participant-count-select');
+      if (selectElem) selectElem.value = String(initialCount);
+
+      const savedBracket = localStorage.getItem('custom_bracket_data_16_ad_v2');
+      if (savedBracket) {
+        try { bracket = JSON.parse(savedBracket); }
+        catch (e) { bracket = initEmptyBracket(); }
+      } else {
+        bracket = initEmptyBracket();
+      }
+
+      activeSlotsByCount = {};
+      for (let count = 2; count <= 16; count++) {
+        activeSlotsByCount[count] = getDefaultActiveSlotsForCount(count);
+      }
+
+      let customActiveSlots = null;
+      try {
+        const savedSlotsJson = localStorage.getItem('custom_bracket_active_slots');
+        if (savedSlotsJson) customActiveSlots = JSON.parse(savedSlotsJson);
+      } catch (e) {}
+
+      if (Array.isArray(customActiveSlots) && customActiveSlots.length === activeParticipantCount) {
+        activeSlots = [...customActiveSlots];
+        activeSlotsByCount[activeParticipantCount] = [...customActiveSlots];
+      } else {
+        activeSlots = [...getDefaultActiveSlotsForCount(activeParticipantCount)];
+        activeSlotsByCount[activeParticipantCount] = [...activeSlots];
+      }
+
+      if (!bracket.r1 || bracket.r1.length === 0) {
+        bracket = initEmptyBracket();
+      }
+
+      ensureDummyParticipantsForCurrentCount();
+      updateDropdownSelection();
+      evaluateByesAndProgression();
+      renderAll();
+      window.addEventListener('resize', () => requestAnimationFrame(drawLines));
+      new ResizeObserver(() => requestAnimationFrame(drawLines)).observe(document.getElementById('bracket-wrapper'));
+    }
+
+    window.onload = initApp;
+  </script>
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { get, ref, set } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { auth, rtdb } from "./firebase-config.js";
+
+    let authenticatedUser = null;
+    let resolveAuthReady;
+    const authReady = new Promise(resolve => { resolveAuthReady = resolve; });
+    onAuthStateChanged(auth, user => {
+      authenticatedUser = user;
+      resolveAuthReady(user);
+    });
+
+    window.baganStorage = {
+      async loadActiveSlotsByCount() {
+        await authReady;
+        return {};
+      },
+      async saveActiveSlotsByCount(activeSlotsByCount) {
+        await authReady;
+        return Promise.resolve();
+      }
+    };
+  </script>
+</body>
+</html>

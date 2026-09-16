@@ -6,6 +6,14 @@
       ".read": true,
       ".write": "auth != null && (root.child('pengaturan/superAdminUid').val() == auth.uid || auth.token.firebase.sign_in_provider == 'anonymous')"
     },
+    "versiPeserta": {
+      ".read": true,
+      ".write": "auth != null && (root.child('pengaturan/superAdminUid').val() == auth.uid || auth.token.firebase.sign_in_provider == 'anonymous')"
+    },
+    "pembayaran": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('pengaturan/superAdminUid').val() == auth.uid || auth.token.firebase.sign_in_provider == 'anonymous')"
+    },
     "pengaturan": {
       ".read": true,
       ".write": "auth != null && root.child('pengaturan/superAdminUid').val() == auth.uid"
@@ -19,6 +27,10 @@
     "kodeAkses": {
       ".read": true,
       ".write": "auth != null && root.child('pengaturan/superAdminUid').val() == auth.uid"
+    },
+    "bagan": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

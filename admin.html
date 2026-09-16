@@ -9,21 +9,36 @@
 </head>
 <body>
     <main class="page-shell">
-        <header class="site-header">
-            <div class="brand-lockup">
-                <img class="brand-logo" src="assets/kensho-logo.png" alt="KenshoTech Ecosystem">
-                <div>
-                <p class="eyebrow">KENSHOTECH ECOSYSTEM / ADMIN</p>
-                <h1 id="championship-title">Nama Kejuaraan</h1>
-                <p class="intro">Upload file Excel untuk memperbarui daftar peserta yang tampil di halaman publik.</p>
+        <header class="app-header" id="main-app-header">
+            <div class="brand-bar">
+                <div class="brand-identity">
+                    <div class="brand-logo-wrapper">
+                        <img class="brand-logo" src="assets/kensho-logo.png" alt="KenshoTech Ecosystem">
+                    </div>
+                    <div class="brand-titles">
+                        <span class="brand-name">KENSHOTECH ECOSYSTEM</span>
+                        <span class="brand-tagline">Admin Control Panel</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <span id="user-status" class="user-status" hidden></span>
+                    <button id="logout-button" class="button secondary-button" type="button" hidden>Keluar</button>
+                    <a class="header-link" href="index.html">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-link-icon">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Halaman Publik
+                    </a>
                 </div>
             </div>
-            <div class="header-actions">
-                <span id="user-status" class="user-status" hidden></span>
-                <button id="logout-button" class="button secondary-button" type="button" hidden>Keluar</button>
-                <a class="header-link" href="index.html">Halaman Publik</a>
-            </div>
         </header>
+
+        <section class="championship-hero" aria-label="Identitas Kejuaraan">
+            <h1 id="championship-title" class="championship-headline">Nama Kejuaraan</h1>
+            <p class="intro">Pusat kendali peserta kejuaraan, integrasi data kategori Open & Festival, serta rekapitulasi medali.</p>
+        </section>
 
         <section id="login-panel" class="content-panel login-panel">
             <div class="panel-toolbar compact-toolbar">
@@ -58,40 +73,192 @@
 
         <div id="admin-content" hidden>
             <section class="summary-grid admin-summary" aria-label="Ringkasan data peserta">
-                <div class="summary-card">
-                    <span>Total peserta</span>
+                <div class="summary-card card-total">
+                    <div class="card-header">
+                        <span class="card-label">Total Peserta</span>
+                        <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
                     <strong id="admin-total-count">0</strong>
                 </div>
-                <div class="summary-card">
-                    <span>Peserta Open</span>
+                <div class="summary-card card-open">
+                    <div class="card-header">
+                        <span class="card-label">Peserta Open</span>
+                        <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
                     <strong id="admin-open-count">0</strong>
                 </div>
-                <div class="summary-card">
-                    <span>Open Perorangan</span>
+                <div class="summary-card card-open-individual">
+                    <div class="card-header">
+                        <span class="card-label">Open Perorangan</span>
+                        <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
                     <strong id="admin-open-individual-count">0</strong>
                 </div>
-                <div class="summary-card">
-                    <span>Open Beregu</span>
+                <div class="summary-card card-open-team">
+                    <div class="card-header">
+                        <span class="card-label">Open Beregu</span>
+                        <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
                     <strong id="admin-open-team-count">0</strong>
                 </div>
-                <div class="summary-card">
-                    <span>Peserta Festival</span>
+                <div class="summary-card card-festival">
+                    <div class="card-header">
+                        <span class="card-label">Peserta Festival</span>
+                        <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="8" r="7"></circle>
+                            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                        </svg>
+                    </div>
                     <strong id="admin-festival-count">0</strong>
                 </div>
             </section>
 
             <div class="admin-shell">
-                <aside class="admin-sidebar" aria-label="Menu utama admin">
-                    <p class="eyebrow">MENU</p>
-                    <button class="admin-view-tab active" data-admin-view="participant-list" type="button">List Peserta</button>
-                    <button class="admin-view-tab" data-admin-view="class-recap" type="button">Rekap Total</button>
-                    <button class="admin-view-tab" data-admin-view="medal-count" type="button">Penghitungan Medali</button>
-                    <div class="sidebar-divider"></div>
-                    <p class="eyebrow">SETTINGS</p>
-                    <button class="settings-view-tab active" data-settings-view="event-settings" type="button">Nama Kejuaraan</button>
-                    <button class="settings-view-tab" data-settings-view="class-type-settings" type="button">Pengaturan Kelas</button>
-                    <button class="settings-view-tab" data-settings-view="access-code-management" type="button">Kode Akses</button>
-                    <button class="settings-view-tab" data-settings-view="upload-panel" type="button">Import File</button>
+                <aside class="admin-sidebar" aria-label="Menu navigasi admin">
+                    <div class="sidebar-header">
+                        <div class="sidebar-badge">
+                            <span class="pulse-dot"></span>
+                            <span id="sidebar-role-badge">Admin Panel</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-nav-group">
+                        <div class="sidebar-group-title">
+                            <span>MENU UTAMA</span>
+                        </div>
+                        <nav class="sidebar-nav" aria-label="Navigasi data peserta">
+                            <button class="side-menu-item active" data-view="participant-list" type="button" id="menu-participant-list">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span class="menu-text">List Peserta</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="class-recap" type="button" id="menu-class-recap">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                <span class="menu-text">Rekap Total</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="medal-count" type="button" id="menu-medal-count">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="8" r="7"></circle>
+                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                </svg>
+                                <span class="menu-text">Penghitungan Medali</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="payment-management" type="button" id="menu-payment-management">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                                    <line x1="6" y1="15" x2="10" y2="15"></line>
+                                </svg>
+                                <span class="menu-text">Pembayaran</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="schedule-view" type="button" id="menu-schedule-view">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span class="menu-text">Jadwal Pertandingan</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="mix-class-view" type="button" id="menu-mix-class-view" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8 6h13"></path>
+                                    <path d="M8 12h13"></path>
+                                    <path d="M8 18h13"></path>
+                                    <path d="M3 6h.01"></path>
+                                    <path d="M3 12h.01"></path>
+                                    <path d="M3 18h.01"></path>
+                                </svg>
+                                <span class="menu-text">Mix Kelas</span>
+                            </button>
+
+                            <a class="side-menu-item" data-view="bracket-view" href="bracket-workspace.html" id="menu-bracket-view" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 3v6"></path>
+                                    <path d="M18 15v6"></path>
+                                    <path d="M6 9a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3"></path>
+                                    <path d="M18 3v6"></path>
+                                    <path d="M6 21v-6"></path>
+                                    <path d="M18 9a3 3 0 0 1-3 3H9a3 3 0 0 0-3 3"></path>
+                                </svg>
+                                <span class="menu-text">Bagan</span>
+                            </a>
+                        </nav>
+                    </div>
+
+                    <div class="sidebar-nav-group" id="sidebar-settings-group">
+                        <div class="sidebar-group-title">
+                            <span>PENGATURAN</span>
+                        </div>
+                        <nav class="sidebar-nav" aria-label="Navigasi pengaturan sistem">
+                            <button class="side-menu-item" data-view="event-settings" type="button" id="menu-event-settings">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                                </svg>
+                                <span class="menu-text">Nama Kejuaraan</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="class-type-settings" type="button" id="menu-class-type-settings" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                    <polyline points="2 17 12 22 22 17"></polyline>
+                                    <polyline points="2 12 12 17 22 12"></polyline>
+                                </svg>
+                                <span class="menu-text">Pengaturan Kelas</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="slow-track-settings" type="button" id="menu-slow-track-settings" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                <span class="menu-text">Rumus Slow Track</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="access-code-management" type="button" id="menu-access-code-management" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <span class="menu-text">Kode Akses</span>
+                            </button>
+
+                            <button class="side-menu-item" data-view="upload-panel" type="button" id="menu-upload-panel" hidden>
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span class="menu-text">Import File Excel</span>
+                            </button>
+                        </nav>
+                    </div>
                 </aside>
 
                 <div class="admin-main-panel">
@@ -102,13 +269,23 @@
                                 <h2>List Peserta</h2>
                             </div>
                         </div>
+                        <div class="search-row">
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input id="admin-participant-search" type="search" placeholder="Cari nama atlet, kelas, atau kontingen..." autocomplete="off">
+                            </div>
+                        </div>
                         <nav class="category-list" aria-label="Kategori list peserta">
-                            <button class="category-button admin-category-tab active" data-admin-category="Open" type="button">Open</button>
+                            <button class="category-button admin-category-tab active" data-admin-category="Open" type="button">Open Perorangan</button>
                             <button class="category-button admin-category-tab" data-admin-category="Festival" type="button">Festival</button>
+                            <button class="category-button admin-category-tab" data-admin-category="Beregu" type="button">Beregu</button>
                         </nav>
                         <div class="table-responsive">
                             <table>
-                                <thead><tr><th>No.</th><th>Nama Lengkap</th><th>Kelas Pertandingan</th><th>Kontingen</th></tr></thead>
+                                <thead><tr><th>No.</th><th>Nama Lengkap</th><th>Kelas Pertandingan</th><th>Kontingen / Tim</th><th>Aksi</th></tr></thead>
                                 <tbody id="admin-participant-body"></tbody>
                             </table>
                         </div>
@@ -116,6 +293,91 @@
                             <button id="admin-previous-page" class="button secondary-button" type="button">Sebelumnya</button>
                             <span id="admin-page-info" class="page-info">Halaman 1</span>
                             <button id="admin-next-page" class="button secondary-button" type="button">Berikutnya</button>
+                        </div>
+                        <dialog id="participant-edit-dialog" class="participant-edit-dialog">
+                            <form id="participant-edit-form" method="dialog">
+                                <div class="panel-toolbar compact-toolbar">
+                                    <div>
+                                        <p class="eyebrow">EDIT PESERTA</p>
+                                        <h2>Perbarui data peserta</h2>
+                                    </div>
+                                </div>
+                                <label for="participant-edit-name">Nama Lengkap</label>
+                                <input id="participant-edit-name" type="text" required>
+                                <label for="participant-edit-class">Kelas Pertandingan</label>
+                                <input id="participant-edit-class" type="text" required>
+                                <label for="participant-edit-contingent">Kontingen / Tim</label>
+                                <input id="participant-edit-contingent" type="text">
+                                <div class="dialog-actions">
+                                    <button class="button secondary-button" value="cancel" type="button" id="participant-edit-cancel">Batal</button>
+                                    <button class="button primary-button" value="save" type="submit">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        </dialog>
+                    </section>
+
+                    <section id="mix-class-view" class="content-panel admin-data-view" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">PERSIAPAN BAGAN</p>
+                                <h2>Mix Kelas</h2>
+                            </div>
+                        </div>
+                        <div class="bracket-mix-panel">
+                            <div>
+                                <p class="eyebrow">KELAS GABUNGAN</p>
+                                <h3>Gabungkan kelas sebelum membuat bagan</h3>
+                                <p class="settings-help">Pilih minimal dua kelas dari kategori yang sama. Kelas beregu dihitung berdasarkan jumlah tim, bukan jumlah atlet.</p>
+                            </div>
+                            <div class="bracket-mix-form">
+                                <label class="bracket-class-picker">
+                                    <span>Kategori</span>
+                                    <select id="mix-category-select">
+                                        <option value="Open">Open</option>
+                                        <option value="Festival">Festival</option>
+                                    </select>
+                                </label>
+                                <label class="bracket-class-picker">
+                                    <span>Nama kelas baru</span>
+                                    <input id="bracket-mix-name" type="text" placeholder="Contoh: KATA PEMULA GABUNGAN" autocomplete="off">
+                                </label>
+                                <button id="create-bracket-mix" class="button primary-button" type="button">Buat Mix Kelas</button>
+                            </div>
+                            <div class="bracket-mix-source-columns">
+                                <div class="bracket-mix-source-column">
+                                    <h4>Kelas Perlu Mix</h4>
+                                    <p class="settings-help">Peserta kurang dari 2.</p>
+                                    <div id="bracket-mix-needs-list" class="bracket-mix-source-list"></div>
+                                </div>
+                                <div class="bracket-mix-source-column">
+                                    <div class="bracket-mix-source-heading">
+                                        <div>
+                                            <h4>Semua Kelas</h4>
+                                            <p class="settings-help">Pilih kelas pendamping.</p>
+                                        </div>
+                                        <label class="bracket-age-picker">
+                                            <span>Usia</span>
+                                            <select id="bracket-mix-age-category">
+                                                <option value="SEMUA">Semua</option>
+                                                <option value="PRA USIA DINI">Pra Usia Dini</option>
+                                                <option value="USIA DINI">Usia Dini</option>
+                                                <option value="PRA PEMULA">Pra Pemula</option>
+                                                <option value="PEMULA">Pemula</option>
+                                                <option value="KADET">Kadet</option>
+                                                <option value="JUNIOR">Junior</option>
+                                                <option value="UNDER-21">Under-21</option>
+                                                <option value="SENIOR">Senior</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div id="bracket-mix-all-list" class="bracket-mix-source-list"></div>
+                                </div>
+                            </div>
+                            <p id="bracket-mix-status" class="status-message" aria-live="polite"></p>
+                            <div class="active-mix-section">
+                                <h4>Mix Aktif</h4>
+                                <div id="active-mix-list" class="active-mix-list"></div>
+                            </div>
                         </div>
                     </section>
 
@@ -138,6 +400,46 @@
                         </div>
                     </section>
 
+                    <section id="schedule-view" class="content-panel admin-data-view" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">JADWAL PERTANDINGAN</p>
+                                <h2>Daftar Kelas Pertandingan</h2>
+                                <p class="settings-help">Daftar ini menjadi dasar penyusunan jadwal pertandingan.</p>
+                            </div>
+                        </div>
+                        <nav class="schedule-tabs" aria-label="Tampilan jadwal">
+                            <button class="category-button schedule-tab active" data-schedule-tab="board" type="button">Tampilan Jadwal</button>
+                            <button class="category-button schedule-tab" data-schedule-tab="settings" type="button">Pengaturan Tatami</button>
+                        </nav>
+                        <div id="schedule-board-panel" class="schedule-tab-panel">
+                            <div class="schedule-board-toolbar">
+                                <button id="schedule-shuffle-button" class="button secondary-button" type="button">Acak Jadwal</button>
+                            </div>
+                            <div id="schedule-board" class="schedule-board" aria-label="Papan jadwal per Tatami"></div>
+                        </div>
+                        <div id="schedule-settings-panel" class="schedule-tab-panel" hidden>
+                            <nav class="schedule-category-tabs" aria-label="Kategori pengaturan Tatami">
+                                <button class="category-button schedule-category-tab active" data-schedule-category="Open" type="button">Open</button>
+                                <button class="category-button schedule-category-tab" data-schedule-category="Festival" type="button">Festival</button>
+                            </nav>
+                            <label class="schedule-tatami-control">
+                                <span>Jumlah Tatami</span>
+                                <select id="schedule-tatami-count">
+                                    <option value="1">1 Tatami</option><option value="2">2 Tatami</option><option value="3">3 Tatami</option><option value="4">4 Tatami</option><option value="5">5 Tatami</option>
+                                    <option value="6">6 Tatami</option><option value="7">7 Tatami</option><option value="8">8 Tatami</option><option value="9">9 Tatami</option><option value="10">10 Tatami</option>
+                                </select>
+                            </label>
+                            <button id="schedule-auto-assign-button" class="button primary-button" type="button">Bagi Otomatis Seimbang</button>
+                            <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>No.</th><th>Kategori</th><th>Kelas Pertandingan</th><th>Peserta</th><th>Tatami</th><th>Status</th></tr></thead>
+                                <tbody id="schedule-body"></tbody>
+                            </table>
+                        </div>
+                        </div>
+                    </section>
+
                     <section id="medal-count-view" class="content-panel admin-data-view" hidden>
                         <div class="panel-toolbar compact-toolbar">
                             <div>
@@ -145,140 +447,242 @@
                                 <h2>Penghitungan Medali</h2>
                             </div>
                         </div>
+                        <div class="overall-medal-summary">
+                            <div class="panel-toolbar compact-toolbar">
+                                <div>
+                                    <p class="eyebrow">TOTAL KESELURUHAN</p>
+                                    <h2>Kebutuhan Medali Open + Festival</h2>
+                                </div>
+                            </div>
+                            <div class="medal-summary-grid">
+                                <div class="summary-card medal-card medal-gold"><span class="card-label">Emas</span><strong id="overall-gold-medal-count">0</strong></div>
+                                <div class="summary-card medal-card medal-silver"><span class="card-label">Perak</span><strong id="overall-silver-medal-count">0</strong></div>
+                                <div class="summary-card medal-card medal-bronze"><span class="card-label">Perunggu</span><strong id="overall-bronze-medal-count">0</strong></div>
+                            </div>
+                        </div>
                         <nav class="category-list" aria-label="Kategori penghitungan medali">
                             <button class="category-button medal-category-tab active" data-medal-category="Open" type="button">Open</button>
-                            <button class="category-button medal-category-tab" data-medal-category="Festival" type="button" disabled>Festival</button>
+                            <button class="category-button medal-category-tab" data-medal-category="Festival" type="button">Festival</button>
                         </nav>
-                        <p id="medal-status" class="status-message">Kebutuhan medali Open.</p>
-                        <div class="medal-summary-grid">
-                            <div class="summary-card"><span>Emas</span><strong id="gold-medal-count">0</strong></div>
-                            <div class="summary-card"><span>Perak</span><strong id="silver-medal-count">0</strong></div>
-                            <div class="summary-card"><span>Perunggu</span><strong id="bronze-medal-count">0</strong></div>
+                        <div id="festival-format-control" class="festival-format-control" hidden>
+                            <div>
+                                <span class="control-label">Format juara Festival</span>
+                                <small id="festival-format-description">Fast Track: peserta dibagi rata; sisa ganjil dihitung setelah memilih Emas atau Perak.</small>
+                            </div>
+                            <label class="format-switch">
+                                <span>Slow Track</span>
+                                <input id="festival-fast-track-toggle" type="checkbox" checked>
+                                <span class="switch-track"></span>
+                                <strong>Fast Track</strong>
+                            </label>
                         </div>
-                        <div class="panel-toolbar compact-toolbar">
+                        <nav id="medal-detail-tabs" class="category-list medal-detail-tabs" aria-label="Detail penghitungan medali">
+                            <button class="category-button medal-detail-tab active" data-medal-detail="requirement" type="button">Kebutuhan Medali</button>
+                            <button class="category-button medal-detail-tab" data-medal-detail="odd" type="button" hidden>Pembagian Ganjil</button>
+                        </nav>
+                        <div class="medal-summary-grid compact-medal-summary">
+                            <div class="summary-card medal-card medal-gold">
+                                <div class="card-header">
+                                    <span class="card-label">Emas</span>
+                                    <span class="medal-badge gold-badge">1st</span>
+                                </div>
+                                <strong id="gold-medal-count">0</strong>
+                            </div>
+                            <div class="summary-card medal-card medal-silver">
+                                <div class="card-header">
+                                    <span class="card-label">Perak</span>
+                                    <span class="medal-badge silver-badge">2nd</span>
+                                </div>
+                                <strong id="silver-medal-count">0</strong>
+                            </div>
+                            <div class="summary-card medal-card medal-bronze">
+                                <div class="card-header">
+                                    <span class="card-label">Perunggu</span>
+                                    <span class="medal-badge bronze-badge">3rd</span>
+                                </div>
+                                <strong id="bronze-medal-count">0</strong>
+                            </div>
+                        </div>
+                        <div id="medal-requirement-panel">
+                            <p id="medal-status" class="status-message">Kebutuhan medali Open.</p>
+                            <div class="panel-toolbar compact-toolbar">
                             <div>
                                 <p class="eyebrow">KELAS TERISI</p>
                                 <h2>Kebutuhan medali per kelas</h2>
                             </div>
-                        </div>
-                        <div class="table-responsive">
+                            </div>
+                            <div class="table-responsive">
                             <table>
                                 <thead><tr><th>No.</th><th>Kelas Pertandingan</th><th>Jenis</th><th>Total Pendaftar</th><th>Emas</th><th>Perak</th><th>Perunggu</th><th>Keterangan</th></tr></thead>
                                 <tbody id="eligible-class-body"></tbody>
                             </table>
+                            </div>
+                        </div>
+                        <div id="odd-medal-panel" class="odd-medal-panel" hidden>
+                            <p id="odd-medal-status" class="status-message">Atur peserta ganjil ke Emas atau Perak.</p>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>No.</th><th>Kelas Festival</th><th>Total Peserta</th><th>Pembagian Dasar</th><th>Sisa Ganjil</th></tr></thead>
+                                    <tbody id="odd-medal-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </section>
 
-                    <div class="settings-shell">
-                        <aside class="settings-sidebar" aria-label="Menu setting">
-                            <p class="eyebrow">SETTINGS</p>
-                            <button class="settings-view-tab active" data-settings-view="event-settings" type="button">Nama Kejuaraan</button>
-                            <button class="settings-view-tab" data-settings-view="class-type-settings" type="button">Pengaturan Kelas</button>
-                            <button class="settings-view-tab" data-settings-view="access-code-management" type="button">Kode Akses</button>
-                            <button class="settings-view-tab" data-settings-view="upload-panel" type="button">Import File</button>
-                        </aside>
-
-                        <div class="settings-content">
-                            <section id="access-code-management" class="content-panel settings-panel" hidden>
-                                <div class="panel-toolbar compact-toolbar">
-                                    <div>
-                                        <p class="eyebrow">SUPER ADMIN</p>
-                                        <h2>Kelola kode akses</h2>
-                                    </div>
-                                </div>
-                                <form id="access-code-form" class="settings-form">
-                                    <label for="new-access-code">Kode baru</label>
-                                    <div class="settings-form-row">
-                                        <input id="new-access-code" type="text" minlength="4" maxlength="40" placeholder="Contoh: 2026" required>
-                                        <button class="button primary-button" type="submit">Buat kode</button>
-                                    </div>
-                                    <label for="new-access-label">Label kode (opsional)</label>
-                                    <input id="new-access-label" type="text" maxlength="80" placeholder="Contoh: Admin pertandingan">
-                                    <p id="access-code-status" class="status-message">Buat beberapa kode untuk admin yang berbeda.</p>
-                                </form>
-                                <div id="access-code-list" class="access-code-list"></div>
-                            </section>
-
-                            <section id="event-settings" class="content-panel settings-panel">
-                                <div class="panel-toolbar compact-toolbar">
-                                    <div>
-                                        <p class="eyebrow">IDENTITAS ACARA</p>
-                                        <h2>Nama kejuaraan</h2>
-                                    </div>
-                                </div>
-                                <form id="championship-form" class="settings-form">
-                                    <label for="championship-name">Judul yang tampil di halaman publik</label>
-                                    <div class="settings-form-row">
-                                        <input id="championship-name" type="text" maxlength="120" placeholder="Contoh: Kejuaraan Karate Nasional 2026" required>
-                                        <button class="button primary-button" type="submit">Simpan nama</button>
-                                    </div>
-                                    <p id="championship-status" class="status-message">Nama kejuaraan belum diatur.</p>
-                                </form>
-                            </section>
-
-                            <section id="class-type-settings" class="content-panel settings-panel" hidden>
-                                <div class="panel-toolbar compact-toolbar">
-                                    <div>
-                                        <p class="eyebrow">PENGATURAN KELAS</p>
-                                        <h2>Tag kelas Beregu / Perorangan</h2>
-                                    </div>
-                                </div>
-                                <form id="class-type-form" class="settings-form">
-                                    <label for="class-name-tag">Nama kelas</label>
-                                    <input id="class-name-tag" type="text" placeholder="Contoh: U-12 Beregu" required>
-                                    <label for="class-type-select">Jenis kelas</label>
-                                    <select id="class-type-select">
-                                        <option value="Perorangan">Perorangan</option>
-                                        <option value="Beregu">Beregu</option>
-                                    </select>
-                                    <button class="button primary-button" type="submit">Simpan tag kelas</button>
-                                    <p id="class-type-status" class="status-message">Gunakan tag ini agar sistem tahu kelas mana yang beregu dan mana yang perorangan.</p>
-                                </form>
-                                <div id="class-type-list" class="access-code-list"></div>
-                            </section>
-
-                            <section id="upload-panel" class="content-panel admin-panel" hidden>
-                                <div class="panel-toolbar">
-                                    <div>
-                                        <p class="eyebrow">IMPORT EXCEL</p>
-                                        <h2>Upload data terbaru</h2>
-                                    </div>
-                                    <span class="source-badge">Baris data mulai 14</span>
-                                </div>
-                                <label class="file-dropzone" for="excel-upload">
-                                    <span class="file-title">Pilih file Excel</span>
-                                    <span class="file-help">Pilih satu atau beberapa file .xlsx/.xls. Sheet FESTIVAL dan OPEN dari semua file akan digabung.</span>
-                                    <input id="excel-upload" type="file" accept=".xlsx,.xls" multiple>
-                                </label>
-
-                                <div id="sheet-selector-container" class="admin-controls" hidden>
-                                    <label for="sheet-selector">Kategori yang akan disimpan</label>
-                                    <select id="sheet-selector"></select>
-                                    <button id="btn-save-firebase" class="button primary-button" type="button">Simpan Semua ke RTDB</button>
-                                </div>
-                                <p id="status-message" class="status-message">Belum ada file yang dipilih.</p>
-                            </section>
-
-                            <section id="preview-panel" class="content-panel" hidden>
-                                <div class="panel-toolbar compact-toolbar">
-                                    <div>
-                                        <p class="eyebrow">PRATINJAU</p>
-                                        <h2>Sheet: <span id="current-category">Belum dipilih</span></h2>
-                                    </div>
-                                </div>
-                                <div class="table-responsive">
-                                    <table>
-                                        <thead><tr id="table-head"></tr></thead>
-                                        <tbody id="table-body"></tbody>
-                                    </table>
-                                </div>
-                            </section>
+                    <section id="event-settings" class="content-panel settings-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">IDENTITAS ACARA</p>
+                                <h2>Nama kejuaraan</h2>
+                            </div>
                         </div>
-                    </div>
+                        <form id="championship-form" class="settings-form">
+                            <label for="championship-name">Judul yang tampil di halaman publik</label>
+                            <div class="settings-form-row">
+                                <input id="championship-name" type="text" maxlength="120" placeholder="Contoh: Kejuaraan Karate Nasional 2026" required>
+                                <button class="button primary-button" type="submit">Simpan Nama & Nominal</button>
+                            </div>
+                            <p id="championship-status" class="status-message">Nama kejuaraan belum diatur.</p>
+                            <div class="fee-settings-grid">
+                                <label>Open Perorangan<input id="fee-open-individual" type="number" min="0" step="1000" placeholder="0"></label>
+                                <label>Open Beregu<input id="fee-open-team" type="number" min="0" step="1000" placeholder="0"></label>
+                                <label>Festival Perorangan<input id="fee-festival" type="number" min="0" step="1000" placeholder="0"></label>
+                                <label>Biaya Kontingen<input id="fee-contingent" type="number" min="0" step="1000" placeholder="0"></label>
+                                <label>Cashback / Pendaftaran<input id="fee-cashback" type="number" min="0" step="1000" placeholder="0"></label>
+                            </div>
+                            <p class="settings-help">Nominal ini dipakai untuk menghitung tagihan setiap kontingen. Klik “Simpan Nama & Nominal” setelah mengisi atau mengubah biaya.</p>
+                        </form>
+                    </section>
+
+                    <section id="payment-management" class="content-panel settings-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">KEUANGAN PENDAFTARAN</p>
+
+                        <dialog id="invoice-dialog" class="invoice-dialog">
+                            <div class="invoice-header">
+                                <div>
+                                    <p class="eyebrow">INVOICE PENDAFTARAN</p>
+                                    <h2 id="invoice-title">Invoice</h2>
+                                </div>
+                                <button id="invoice-close" class="button secondary-button" type="button">Tutup</button>
+                            </div>
+                            <div class="invoice-adjustments">
+                                <label>Biaya tambahan<input id="invoice-extra-fee" type="number" min="0" step="1000" placeholder="0"></label>
+                                <label>Keterangan biaya tambahan<input id="invoice-extra-fee-note" type="text" maxlength="120" placeholder="Contoh: Sewa alat tambahan"></label>
+                                <label>Catatan<textarea id="invoice-note" rows="2" maxlength="300" placeholder="Contoh: Tambahan perlengkapan"></textarea></label>
+                                <button id="invoice-save-adjustments" class="button secondary-button" type="button">Simpan Catatan & Biaya</button>
+                            </div>
+                            <div id="invoice-content" class="invoice-content"></div>
+                            <div class="invoice-actions">
+                                <button id="invoice-print" class="button primary-button" type="button">Cetak Invoice</button>
+                                <button id="invoice-print-thermal" class="button secondary-button" type="button">Cetak Thermal 80mm</button>
+                            </div>
+                        </dialog>
+                                <h2>Status Pembayaran</h2>
+                            </div>
+                        </div>
+                        <p id="payment-status" class="status-message">Jumlah peserta dibayar menentukan status pembayaran kontingen.</p>
+                        <div class="table-responsive">
+                            <table class="payment-table">
+                                <thead><tr><th>No.</th><th>Kontingen</th><th>Total Peserta</th><th>Sudah Dibayar</th><th>Total Tagihan</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody id="payment-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="class-type-settings" class="content-panel settings-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">PENGATURAN KELAS</p>
+                                <h2>Tag kelas Beregu / Perorangan</h2>
+                            </div>
+                        </div>
+                        <p id="class-type-status" class="status-message">Semua kelas diambil dari data peserta. Gunakan switch untuk memilih Perorangan atau Beregu.</p>
+                        <div id="class-type-list" class="access-code-list"></div>
+                    </section>
+
+                    <section id="slow-track-settings" class="content-panel settings-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">RUMUS FESTIVAL</p>
+                                <h2>Rumus Slow Track</h2>
+                            </div>
+                        </div>
+                        <p class="status-message">Festival Slow Track memakai pool 3 atau 4 peserta. Pengecualian: 2 peserta = 1 emas + 1 perak, dan 5 peserta = pool 3 + 2.</p>
+                        <div class="table-responsive">
+                            <table class="slow-track-formula-table">
+                                <thead><tr><th>Peserta</th><th>Susunan Pool</th><th>Kebutuhan Medali</th><th>Aksi</th></tr></thead>
+                                <tbody id="slow-track-formula-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="slow-track-pagination">
+                            <button id="slow-track-previous-page" class="button secondary-button" type="button">Sebelumnya</button>
+                            <span id="slow-track-page-info" class="page-info">Halaman 1 dari 10</span>
+                            <button id="slow-track-next-page" class="button secondary-button" type="button">Berikutnya</button>
+                        </div>
+                    </section>
+
+                    <section id="access-code-management" class="content-panel settings-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">SUPER ADMIN</p>
+                                <h2>Kelola kode akses</h2>
+                            </div>
+                        </div>
+                        <form id="access-code-form" class="settings-form">
+                            <label for="new-access-code">Kode baru</label>
+                            <div class="settings-form-row">
+                                <input id="new-access-code" type="text" minlength="4" maxlength="40" placeholder="Contoh: 2026" required>
+                                <button class="button primary-button" type="submit">Buat kode</button>
+                            </div>
+                            <label for="new-access-label">Label kode (opsional)</label>
+                            <input id="new-access-label" type="text" maxlength="80" placeholder="Contoh: Admin pertandingan">
+                            <p id="access-code-status" class="status-message">Buat beberapa kode untuk admin yang berbeda.</p>
+                        </form>
+                        <div id="access-code-list" class="access-code-list"></div>
+                    </section>
+
+                    <section id="upload-panel" class="content-panel admin-panel" hidden>
+                        <div class="panel-toolbar">
+                            <div>
+                                <p class="eyebrow">IMPORT EXCEL</p>
+                                <h2>Upload data terbaru</h2>
+                            </div>
+                            <span class="source-badge">Baris data mulai 14</span>
+                        </div>
+                        <label class="file-dropzone" for="excel-upload">
+                            <span class="file-title">Pilih file Excel</span>
+                            <span class="file-help">Pilih satu atau beberapa file .xlsx/.xls. Sheet FESTIVAL dan OPEN dari semua file akan digabung.</span>
+                            <input id="excel-upload" type="file" accept=".xlsx,.xls" multiple>
+                        </label>
+
+                        <div id="sheet-selector-container" class="admin-controls" hidden>
+                            <label for="sheet-selector">Kategori yang akan disimpan</label>
+                            <select id="sheet-selector"></select>
+                            <button id="btn-save-firebase" class="button primary-button" type="button">Simpan Semua ke RTDB</button>
+                        </div>
+                        <p id="status-message" class="status-message">Belum ada file yang dipilih.</p>
+                    </section>
+
+                    <section id="preview-panel" class="content-panel" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">PRATINJAU</p>
+                                <h2>Sheet: <span id="current-category">Belum dipilih</span></h2>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr id="table-head"></tr></thead>
+                                <tbody id="table-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
     </main>
-    <script type="module" src="app.js?v=3"></script>
+    <script type="module" src="app.js?v=4"></script>
 </body>
 </html>

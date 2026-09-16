@@ -1,0 +1,15 @@
+{
+  "name": "kenshotech-ecosystem",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Participant registration, category management, medal count calculation, and admin dashboard for martial arts championships.",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Static site ready'",
+    "lint": "node -c server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

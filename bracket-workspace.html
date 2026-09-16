@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bagan Pertandingan | KenshoTech Ecosystem</title>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <main class="page-shell bracket-workspace-page">
+        <header class="app-header">
+            <div class="brand-bar">
+                <div class="brand-identity">
+                    <div class="brand-logo-wrapper"><img class="brand-logo" src="assets/kensho-logo.png" alt="KenshoTech Ecosystem"></div>
+                    <div class="brand-titles"><span class="brand-name">KENSHOTECH ECOSYSTEM</span><span class="brand-tagline">Persiapan Bagan</span></div>
+                </div>
+                <div class="header-actions">
+                    <a class="header-link" href="admin.html">Kembali ke Admin</a>
+                    <button id="open-bracket-rules" class="button secondary-button" type="button">Aturan Pengacakan</button>
+                    <button id="open-bracket-display" class="button primary-button" type="button">Buka Preview Bagan</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="championship-hero compact-hero">
+            <p class="eyebrow">MENU BAGAN</p>
+            <h1>Bagan Pertandingan</h1>
+            <p class="intro">Siapkan kelas dan peserta sebelum membuka preview bagan.</p>
+        </section>
+
+        <section class="content-panel bracket-workspace-panel">
+            <div class="bracket-class-counts">
+                <div class="bracket-class-count-card"><span>Open</span><strong id="bracket-open-class-count">0</strong><small>kelas perlu bagan</small></div>
+                <div class="bracket-class-count-card"><span>Festival</span><strong id="bracket-festival-class-count">0</strong><small>kelas perlu bagan</small></div>
+            </div>
+            <div class="bracket-workspace-toolbar">
+                <div><p class="eyebrow">DATA PESERTA</p><h2>Pilih kelas pertandingan</h2></div>
+                <label class="bracket-class-picker bracket-category-picker"><span>Kategori</span><select id="bracket-category-select"><option value="Open">Open</option><option value="Festival">Festival</option></select></label>
+                <label class="bracket-class-picker bracket-class-wide"><span>Kelas</span><select id="bracket-class-select"><option value="">Memuat kelas...</option></select></label>
+            </div>
+            <div class="bracket-class-summary"><strong id="bracket-selected-class">Belum ada kelas dipilih</strong><span id="bracket-participant-count">0 peserta</span></div>
+            <div id="bracket-contingent-summary" class="bracket-contingent-summary" aria-label="Jumlah peserta per kontingen"></div>
+            
+            <div class="bracket-actions-toolbar">
+                <div class="bracket-actions-left">
+                    <button id="btn-smart-shuffle" class="button primary-button" type="button" title="Acak urutan dengan memisahkan kontingen yang sama">
+                        🎲 Acak Pintar (Anti-Bentrok)
+                    </button>
+                    <button id="btn-reset-order" class="button secondary-button" type="button" title="Kembalikan susunan peserta ke urutan database">
+                        ↺ Reset Urutan
+                    </button>
+                </div>
+                <div class="bracket-clash-indicator" id="bracket-clash-status">
+                    <span class="clash-pill is-safe">✓ Semua kontingen aman</span>
+                </div>
+            </div>
+
+            <div id="bracket-swap-banner" class="bracket-swap-banner" hidden>
+                <span class="swap-banner-text">💡 <strong>Mode Tukar Posisi:</strong> Memilih <strong id="swap-banner-name">-</strong> (<span id="swap-banner-slot">-</span>). Klik peserta lain di tabel atau bagan untuk bertukar posisi.</span>
+                <button id="btn-cancel-swap" class="button button-small secondary-button" type="button">Batal</button>
+            </div>
+
+            <p id="bracket-status" class="status-message" aria-live="polite">Memuat data peserta...</p>
+            <nav id="festival-preview-tabs" class="festival-preview-tabs" aria-label="Tampilan Festival" hidden>
+                <button class="category-button festival-preview-tab active" data-festival-tab="participants" type="button">List Peserta</button>
+                <button class="category-button festival-preview-tab" data-festival-tab="preview" type="button">Preview Bagan</button>
+            </nav>
+            <div id="bracket-participant-list-panel" class="table-responsive">
+                <table class="bracket-participants-table">
+                    <thead>
+                        <tr>
+                            <th class="festival-partai-column" style="width: 125px;">Partai</th>
+                            <th style="width: 45px;">No.</th>
+                            <th>Nama Peserta</th>
+                            <th style="width: 95px;">Kategori</th>
+                            <th>Kontingen</th>
+                            <th style="width: 145px; text-align: center;">Atur Posisi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bracket-participant-body"></tbody>
+                </table>
+            </div>
+            <section class="inline-bracket-preview" aria-labelledby="inline-bracket-title">
+                <div class="inline-bracket-header">
+                    <div><p class="eyebrow">PREVIEW POSISI</p><h2 id="inline-bracket-title">Bagan 16 Peserta</h2></div>
+                    <div class="inline-bracket-header-meta">
+                        <span class="bracket-hint-text">💡 Klik slot peserta pada bagan untuk langsung bertukar posisi</span>
+                        <span id="inline-bracket-count" class="status-message">0 peserta</span>
+                    </div>
+                </div>
+                <div id="inline-bracket-board" class="inline-bracket-board"></div>
+            </section>
+            <section id="festival-preview" class="festival-preview" aria-labelledby="festival-preview-title" hidden>
+                <div class="inline-bracket-header">
+                    <div><p class="eyebrow">PREVIEW FESTIVAL FAST TRACK</p><h2 id="festival-preview-title">Bagan Festival</h2></div>
+                    <span id="festival-preview-count" class="status-message">0 peserta</span>
+                </div>
+                <div class="table-responsive festival-match-table-wrap">
+                    <table class="festival-match-table">
+                        <thead><tr><th>MERAH</th><th>Nama Peserta</th><th>Kontingen</th><th>Juara</th><th>VS</th><th>Juara</th><th>Nama Peserta</th><th>Kontingen</th><th>Biru</th></tr></thead>
+                        <tbody id="festival-match-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog id="bracket-rules-dialog" class="bracket-rules-dialog">
+        <div class="bracket-rules-modal-header"><div><p class="eyebrow">MESIN PENGACAKAN</p><h2>Aturan Pengacakan</h2><p class="settings-help">Aturan yang digunakan saat pengacakan peserta.</p></div><button id="close-bracket-rules" class="button secondary-button" type="button">Tutup</button></div>
+        <div class="bracket-rules-grid">
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="separateSameContingentFirstRound" checked><span><strong>Pisahkan kontingen sama</strong><small>Tidak bertemu pada partai pertama jika memungkinkan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="balanceContingents" checked><span><strong>Kontingen merata</strong><small>Distribusi kontingen seimbang.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="bottomHeavyContingents" checked><span><strong>Kontingen berat bawah</strong><small>Distribusi bawah diprioritaskan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="balanceBracketSides" checked><span><strong>Sisi bagan seimbang</strong><small>Atas dan bawah diseimbangkan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="separateSameClub" checked><span><strong>Pisahkan klub/dojang</strong><small>Tidak bertemu terlalu awal.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="separateSeeds" checked><span><strong>Pisahkan unggulan</strong><small>Unggulan dijauhkan dari pertemuan awal.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="distributeByes" checked><span><strong>Distribusi BYE merata</strong><small>BYE tidak menumpuk di satu sisi.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="festivalSpreadContingents" checked><span><strong>Festival: sebar kontingen</strong><small>Kontingen berbeda diprioritaskan bertemu sebelum pengulangan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="validateDuplicates" checked><span><strong>Periksa data ganda</strong><small>Nama dan kontingen ganda diberi peringatan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="warnWhenRuleCannotBeMet" checked><span><strong>Peringatan konflik</strong><small>Konflik aturan diberi peringatan.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="allowReshuffle" checked><span><strong>Izinkan acak ulang</strong><small>Pengacakan dapat diulang.</small></span></label>
+            <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="lockApprovedDraw" checked><span><strong>Kunci hasil disetujui</strong><small>Hasil tidak berubah tanpa dibuka.</small></span></label>
+        </div>
+        <p id="bracket-rules-status" class="status-message success">Aturan tersimpan</p>
+    </dialog>
+    <script type="module" src="bracket-workspace.js"></script>
+</body>
+</html>

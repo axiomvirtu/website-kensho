@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bagan Pertandingan</title>
+    <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body class="bracket-page">
+    <main class="bracket-shell">
+        <header class="bracket-header">
+            <div>
+                <p class="eyebrow">PERTANDINGAN</p>
+                <h1>Bagan Pertandingan</h1>
+                <p class="bracket-subtitle">Tampilan bagan untuk layar pertandingan.</p>
+            </div>
+            <div class="bracket-actions">
+                <button id="reset-bracket" class="button secondary-button" type="button">Reset Bagan</button>
+                <button class="button secondary-button" type="button" onclick="window.close()">Tutup Tab</button>
+            </div>
+        </header>
+        <section class="bracket-stage" aria-label="Tampilan bagan pertandingan">
+            <div class="bracket-help">Klik nama peserta yang menang di setiap pertandingan. Dua peserta yang kalah di semifinal otomatis menjadi Juara 3.</div>
+            <div id="bracket-board" class="bracket-board"></div>
+            <div class="bracket-results">
+                <div class="result-card">
+                    <span class="result-label">Juara 1</span>
+                    <strong id="champion-result">Belum ditentukan</strong>
+                </div>
+                <div class="result-card">
+                    <span class="result-label">Juara 2</span>
+                    <strong id="runner-up-result">Belum ditentukan</strong>
+                </div>
+                <div class="result-card third-place-result">
+                    <span class="result-label">Juara 3</span>
+                    <strong id="third-place-result-one">Belum ditentukan</strong>
+                </div>
+                <div class="result-card third-place-result">
+                    <span class="result-label">Juara 3</span>
+                    <strong id="third-place-result-two">Belum ditentukan</strong>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="bracket.js?v=1"></script>
+</body>
+</html>
