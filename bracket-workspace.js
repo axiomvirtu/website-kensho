@@ -1570,6 +1570,23 @@ async function loadParticipants() {
         }
 
         renderClassOptions();
+        
+        // Baca parameter URL jika diarahkan dari halaman jadwal atau link luar
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramCat = urlParams.get("cat");
+            const paramClass = urlParams.get("class");
+            if (paramCat && (paramCat === "Open" || paramCat === "Festival")) {
+                categorySelect.value = paramCat;
+                renderClassOptions();
+            }
+            if (paramClass && Array.from(classSelect.options).some(opt => opt.value === paramClass)) {
+                classSelect.value = paramClass;
+                cancelSwapSelection();
+                renderParticipants();
+            }
+        } catch (e) {}
+
         updateBracketClassCounters();
         setStatus("Data peserta siap digunakan.", "success");
     } catch (error) {

@@ -183,6 +183,41 @@ let adminParticipantSearchTerm = "";
 let activeBracketCategory = "Open";
 let activeBracketClassKey = "";
 let activeBracketAgeCategory = "SEMUA";
+let cloudBaganMap = {};
+
+function getBracketDbKey(category, className) {
+    const raw = `${category || "Open"}__${normalizeClassName(className)}`.trim();
+    return raw.replace(/[.#$\[\]\/]/g, "_");
+}
+
+function isClassBaganReady(category, className) {
+    if (!className) return false;
+    const dbKey = getBracketDbKey(category, className);
+    if (cloudBaganMap[dbKey]) {
+        const data = cloudBaganMap[dbKey];
+        if (data && (data.bracket || (Array.isArray(data.customOrder) && data.customOrder.length > 0) || data.downloadedAt)) {
+            return true;
+        }
+    }
+    try {
+        const ordersMap = JSON.parse(localStorage.getItem("admin_bracket_custom_orders_v2") || "{}");
+        const localKey = `${category}__${normalizeClassName(className)}`;
+        if (ordersMap[localKey] && ordersMap[localKey].length > 0) return true;
+    } catch (e) {}
+    return false;
+}
+
+async function loadBaganStatusFromCloud() {
+    try {
+        const snapshot = await get(ref(rtdb, "bagan"));
+        if (snapshot.exists()) {
+            cloudBaganMap = snapshot.val() || {};
+            renderScheduleList();
+        }
+    } catch (e) {
+        console.warn("Gagal memuat status bagan dari cloud:", e);
+    }
+}
 let bracketMixClasses = loadBracketMixClasses();
 const BRACKET_SLOT_PLANS_STORAGE_KEY = "admin_bracket_slot_plans";
 const BRACKET_SLOT_LAYOUT_BY_COUNT = {
@@ -390,6 +425,7 @@ async function loadParticipantSummary(force = false) {
     renderPaymentList();
     renderScheduleList();
     if (typeof window.renderContingentList === "function") window.renderContingentList();
+    loadBaganStatusFromCloud();
     const festivalParticipants = participants.filter(participant => participant.kategori === "Festival");
     const openParticipants = participants.filter(participant => participant.kategori === "Open");
     const festivalTotal = adjustedParticipantCount(festivalParticipants, "Festival", classTypeSettings);
@@ -797,9 +833,37 @@ function renderScheduleList() {
         .filter(item => !(item.category === "Open" && item.count <= 1))
         .sort(compareScheduleClasses);
     const rows = allRows.filter(item => item.category === activeScheduleCategory);
-    const tatamiCount = Number(scheduleTatamiCount?.value || 1);
     const savedAssignments = loadScheduleTatamiAssignments();
-    const daySettings = getScheduleDaySettings();
+
+    // Auto-detect max tatami and max day from saved assignments
+    let maxTatami = Number(scheduleTatamiCount?.value || 1);
+    let maxDay = 1;
+    Object.values(savedAssignments).forEach(val => {
+        const raw = String(val || "");
+        if (/^\d+$/.test(raw)) {
+            maxTatami = Math.max(maxTatami, parseInt(raw, 10));
+        } else {
+            const m = raw.match(/^D(\d+)-T(\d+)$/);
+            if (m) {
+                maxDay = Math.max(maxDay, parseInt(m[1], 10));
+                maxTatami = Math.max(maxTatami, parseInt(m[2], 10));
+            }
+        }
+    });
+
+    if (scheduleTatamiCount && Number(scheduleTatamiCount.value) < maxTatami) {
+        scheduleTatamiCount.value = String(maxTatami);
+        localStorage.setItem(scheduleTatamiCountStorageKey, String(maxTatami));
+    }
+    const tatamiCount = Math.max(Number(scheduleTatamiCount?.value || 1), maxTatami);
+
+    let daySettings = getScheduleDaySettings();
+    if (daySettings.length < maxDay) {
+        while (daySettings.length < maxDay) {
+            daySettings.push({ day: daySettings.length + 1, category: "Semua" });
+        }
+        saveScheduleDaySettings(daySettings);
+    }
 
     scheduleBody.innerHTML = rows.length
         ? rows.map((item, index) => {
@@ -849,9 +913,24 @@ function renderScheduleBoard(rows, tatamiCount, assignments) {
     const daySettings = getScheduleDaySettings();
     const orders = loadScheduleOrders();
 
-    const boardData = daySettings.map(d => ({
+    let effTatamiCount = tatamiCount || 1;
+    let maxDay = daySettings.length;
+    Object.values(assignments).forEach(val => {
+        const str = String(val || "");
+        const m = str.match(/T(\d+)/) || str.match(/^(\d+)$/);
+        if (m) effTatamiCount = Math.max(effTatamiCount, parseInt(m[1], 10));
+        const dm = str.match(/^D(\d+)/);
+        if (dm) maxDay = Math.max(maxDay, parseInt(dm[1], 10));
+    });
+
+    const effDaySettings = [...daySettings];
+    while (effDaySettings.length < maxDay) {
+        effDaySettings.push({ day: effDaySettings.length + 1, category: "Semua" });
+    }
+
+    const boardData = effDaySettings.map(d => ({
         day: d.day,
-        tatamis: Array.from({ length: tatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
+        tatamis: Array.from({ length: effTatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
     }));
 
     rows.forEach(item => {
@@ -859,8 +938,8 @@ function renderScheduleBoard(rows, tatamiCount, assignments) {
         const savedValue = /^\d+$/.test(savedValueRaw) ? `D1-T${savedValueRaw}` : savedValueRaw;
         const m = savedValue.match(/^D(\d+)-T(\d+)$/);
         if (m) {
-            const dIdx = parseInt(m[1]) - 1;
-            const tIdx = parseInt(m[2]) - 1;
+            const dIdx = parseInt(m[1], 10) - 1;
+            const tIdx = parseInt(m[2], 10) - 1;
             if (boardData[dIdx] && boardData[dIdx].tatamis[tIdx]) {
                 boardData[dIdx].tatamis[tIdx].classes.push(item);
             }
@@ -881,6 +960,13 @@ function renderScheduleBoard(rows, tatamiCount, assignments) {
         });
     });
 
+    const quickStats = document.getElementById("schedule-tatami-quick-stats");
+    if (quickStats) {
+        let totalAssigned = 0;
+        boardData.forEach(d => d.tatamis.forEach(t => totalAssigned += t.classes.length));
+        quickStats.innerHTML = `<span style="background: var(--surface-200); padding: 4px 10px; border-radius: 99px;">${effTatamiCount} Tatami</span> <span style="background: var(--surface-200); padding: 4px 10px; border-radius: 99px;">${effDaySettings.length} Hari</span> <span style="background: var(--surface-200); padding: 4px 10px; border-radius: 99px;">${totalAssigned} Kelas Terjadwal</span>`;
+    }
+
     const tabsHtml = `
         <nav class="schedule-tabs" aria-label="Tab Hari Pertandingan" style="margin-bottom: 20px;">
             ${boardData.map((d, i) => `
@@ -893,11 +979,38 @@ function renderScheduleBoard(rows, tatamiCount, assignments) {
 
     const panelsHtml = boardData.map((dayGroup, i) => `
         <div class="schedule-day-panel" data-day="${dayGroup.day}" ${i === 0 ? 'style="display:block;"' : 'hidden style="display:none;"'}>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start;">
                 ${dayGroup.tatamis.map(group => `
                     <article class="schedule-tatami-card">
-                        <header><span>Tatami ${group.number}</span><strong>${group.classes.reduce((total, item) => total + item.count, 0).toLocaleString("id-ID")} peserta <small>(${group.classes.length} kelas)</small></strong></header>
-                        <div class="schedule-card-list">${group.classes.length ? group.classes.map((item, index) => `<div class="schedule-card-item"><b>${index + 1}</b><div><strong>${escapeHtml(item.className)}</strong><small>${item.category} · ${item.count.toLocaleString("id-ID")} peserta</small></div></div>`).join("") : '<p class="schedule-empty">Belum ada kelas</p>'}</div>
+                        <header style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 15px; font-weight: 800;">Tatami ${group.number}</span>
+                            <strong>${group.classes.reduce((total, item) => total + item.count, 0).toLocaleString("id-ID")} peserta <small style="font-weight: normal; color: var(--muted);">(${group.classes.length} kelas)</small></strong>
+                        </header>
+                        <div class="schedule-card-list">
+                            ${group.classes.length ? group.classes.map((item, index) => {
+                                const isBaganReady = isClassBaganReady(item.category, item.className);
+                                const baganBadge = isBaganReady
+                                    ? `<span style="background: #e6f4ea; color: #137333; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; border: 1px solid #ceead6; display: inline-flex; align-items: center; gap: 3px;">✅ Bagan Siap</span>`
+                                    : `<span style="background: #fef7e0; color: #b06000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; border: 1px solid #feefc3; display: inline-flex; align-items: center; gap: 3px;">⏳ Belum Ada Bagan</span>`;
+                                return `
+                                    <div class="schedule-card-item" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px;">
+                                        <div style="display: flex; gap: 10px; align-items: center; min-width: 0;">
+                                            <b style="font-size: 13px; min-width: 22px; color: var(--muted);">${index + 1}</b>
+                                            <div style="min-width: 0;">
+                                                <strong style="display: block; font-size: 12.5px; line-height: 1.35; word-break: break-word;">${escapeHtml(item.className)}</strong>
+                                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                                                    <small style="color: var(--muted);">${item.category} · ${item.count.toLocaleString("id-ID")} peserta</small>
+                                                    ${baganBadge}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="bracket-workspace.html?cat=${item.category}&class=${encodeURIComponent(item.className)}" class="button secondary-button" style="min-height: 28px; padding: 3px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Buka bagan kelas ini di workspace">
+                                            Bagan ↗
+                                        </a>
+                                    </div>
+                                `;
+                            }).join("") : '<p class="schedule-empty">Belum ada kelas</p>'}
+                        </div>
                     </article>
                 `).join("")}
             </div>
@@ -1134,15 +1247,24 @@ async function syncScheduleToCloud() {
     try {
         const assignments = loadScheduleTatamiAssignments();
         const orders = loadScheduleOrders();
-        const tatamiCount = localStorage.getItem(scheduleTatamiCountStorageKey) || "1";
+        let effTatamiCount = Number(localStorage.getItem(scheduleTatamiCountStorageKey) || 1);
+        Object.values(assignments).forEach(val => {
+            const str = String(val || "");
+            const m = str.match(/T(\d+)/) || str.match(/^(\d+)$/);
+            if (m) effTatamiCount = Math.max(effTatamiCount, parseInt(m[1], 10));
+        });
+        const tatamiCount = String(effTatamiCount);
         const daySettings = getScheduleDaySettings();
-        await update(ref(rtdb, "pengaturan/jadwal"), {
-            assignments,
-            orders,
+        
+        const payload = {
             tatamiCount,
             daySettings,
             updatedAt: Date.now()
-        });
+        };
+        if (assignments && Object.keys(assignments).length > 0) payload.assignments = assignments;
+        if (orders && Object.keys(orders).length > 0) payload.orders = orders;
+
+        await update(ref(rtdb, "pengaturan/jadwal"), payload);
         console.log("Jadwal disinkronkan ke Cloud.");
     } catch (error) {
         console.warn("Gagal sinkron jadwal ke cloud:", error);
@@ -1152,15 +1274,25 @@ async function syncScheduleToCloud() {
 async function loadScheduleFromCloud() {
     try {
         const snapshot = await get(ref(rtdb, "pengaturan/jadwal"));
+        const localAssignments = loadScheduleTatamiAssignments();
         if (snapshot.exists()) {
             const data = snapshot.val();
-            if (data.assignments) localStorage.setItem(scheduleTatamiStorageKey, JSON.stringify(data.assignments));
-            if (data.orders) localStorage.setItem(scheduleOrderStorageKey, JSON.stringify(data.orders));
-            if (data.tatamiCount) {
-                localStorage.setItem(scheduleTatamiCountStorageKey, data.tatamiCount);
-                if (scheduleTatamiCount) scheduleTatamiCount.value = data.tatamiCount;
+            if (data.assignments && Object.keys(data.assignments).length > 0) {
+                localStorage.setItem(scheduleTatamiStorageKey, JSON.stringify(data.assignments));
+            } else if (localAssignments && Object.keys(localAssignments).length > 0) {
+                syncScheduleToCloud();
             }
-            if (data.daySettings) {
+            if (data.orders && Object.keys(data.orders).length > 0) {
+                localStorage.setItem(scheduleOrderStorageKey, JSON.stringify(data.orders));
+            }
+            if (data.tatamiCount) {
+                const currentCount = parseInt(localStorage.getItem(scheduleTatamiCountStorageKey) || "1", 10);
+                const cloudCount = parseInt(data.tatamiCount, 10);
+                const finalCount = Math.max(currentCount, cloudCount);
+                localStorage.setItem(scheduleTatamiCountStorageKey, String(finalCount));
+                if (scheduleTatamiCount) scheduleTatamiCount.value = String(finalCount);
+            }
+            if (data.daySettings && Array.isArray(data.daySettings) && data.daySettings.length > 0) {
                 localStorage.setItem(scheduleDaysStorageKey, JSON.stringify(data.daySettings));
                 if (scheduleDayCount) {
                     scheduleDayCount.value = data.daySettings.length;
@@ -1169,6 +1301,8 @@ async function loadScheduleFromCloud() {
             }
             renderScheduleList();
             console.log("Jadwal dimuat dari Cloud.");
+        } else if (localAssignments && Object.keys(localAssignments).length > 0) {
+            syncScheduleToCloud();
         }
     } catch (error) {
         console.warn("Gagal muat jadwal dari cloud:", error);
@@ -3240,10 +3374,28 @@ async function exportScheduleToExcel() {
         return;
     }
 
-    const tatamiCount = Number(scheduleTatamiCount?.value || 1);
-    const daySettings = getScheduleDaySettings();
-    const orders = loadScheduleOrders();
     const assignments = loadScheduleTatamiAssignments();
+    let effTatamiCount = Number(scheduleTatamiCount?.value || 1);
+    let maxDay = 1;
+    Object.values(assignments).forEach(val => {
+        const raw = String(val || "");
+        if (/^\d+$/.test(raw)) {
+            effTatamiCount = Math.max(effTatamiCount, parseInt(raw, 10));
+        } else {
+            const m = raw.match(/^D(\d+)-T(\d+)$/);
+            if (m) {
+                maxDay = Math.max(maxDay, parseInt(m[1], 10));
+                effTatamiCount = Math.max(effTatamiCount, parseInt(m[2], 10));
+            }
+        }
+    });
+
+    const daySettings = getScheduleDaySettings();
+    while (daySettings.length < maxDay) {
+        daySettings.push({ day: daySettings.length + 1, category: "Semua" });
+    }
+    const tatamiCount = effTatamiCount;
+    const orders = loadScheduleOrders();
     
     const classesMap = new Map();
     adminParticipants.forEach(participant => {
@@ -3261,7 +3413,7 @@ async function exportScheduleToExcel() {
     
     const boardData = daySettings.map(d => ({
         day: d.day,
-        tatamis: Array.from({ length: tatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
+        tatamis: Array.from({ length: effTatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
     }));
 
     validClasses.forEach(item => {
@@ -3269,8 +3421,8 @@ async function exportScheduleToExcel() {
         const savedValue = /^\d+$/.test(savedValueRaw) ? `D1-T${savedValueRaw}` : savedValueRaw;
         const m = savedValue.match(/^D(\d+)-T(\d+)$/);
         if (m) {
-            const dIdx = parseInt(m[1]) - 1;
-            const tIdx = parseInt(m[2]) - 1;
+            const dIdx = parseInt(m[1], 10) - 1;
+            const tIdx = parseInt(m[2], 10) - 1;
             if (boardData[dIdx] && boardData[dIdx].tatamis[tIdx]) {
                 boardData[dIdx].tatamis[tIdx].classes.push(item);
             }
