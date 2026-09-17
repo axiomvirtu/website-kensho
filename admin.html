@@ -149,6 +149,18 @@
                                 <span class="menu-text">List Peserta</span>
                             </button>
 
+                            <button class="side-menu-item" data-view="contingent-list" type="button" id="menu-contingent-list">
+                                <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 21h18"></path>
+                                    <path d="M5 21V7l8-4v18"></path>
+                                    <path d="M19 21V11l-6-4"></path>
+                                    <line x1="9" y1="9" x2="10" y2="9"></line>
+                                    <line x1="9" y1="13" x2="10" y2="13"></line>
+                                    <line x1="9" y1="17" x2="10" y2="17"></line>
+                                </svg>
+                                <span class="menu-text">List Kontingen</span>
+                            </button>
+
                             <button class="side-menu-item" data-view="class-recap" type="button" id="menu-class-recap">
                                 <svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -314,6 +326,38 @@
                                 </div>
                             </form>
                         </dialog>
+                    </section>
+
+                    <section id="contingent-list-view" class="content-panel admin-data-view" hidden>
+                        <div class="panel-toolbar compact-toolbar">
+                            <div>
+                                <p class="eyebrow">REKAP KONTINGEN</p>
+                                <h2>List Kontingen</h2>
+                            </div>
+                            <span id="contingent-list-badge" class="source-badge">0 Kontingen</span>
+                        </div>
+                        <div class="search-row">
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input id="admin-contingent-search" type="search" placeholder="Cari nama kontingen..." autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px; text-align: center;">No.</th>
+                                        <th>Nama Kontingen</th>
+                                        <th style="width: 140px; text-align: center;">Jumlah Peserta</th>
+                                        <th style="width: 100px; text-align: center;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-contingent-body"></tbody>
+                            </table>
+                        </div>
                     </section>
 
                     <section id="mix-class-view" class="content-panel admin-data-view" hidden>
@@ -692,6 +736,6 @@
             </div>
         </div>
     </main>
-    <script type="module" src="app.js?v=4"></script>
+    <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

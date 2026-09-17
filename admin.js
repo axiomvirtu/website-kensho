@@ -99,6 +99,8 @@ const adminPageInfo = document.getElementById("admin-page-info");
 const adminPreviousPage = document.getElementById("admin-previous-page");
 const adminNextPage = document.getElementById("admin-next-page");
 const adminParticipantSearch = document.getElementById("admin-participant-search");
+const adminContingentSearch = document.getElementById("admin-contingent-search");
+adminContingentSearch?.addEventListener("input", () => window.renderContingentList && window.renderContingentList());
 const participantEditDialog = document.getElementById("participant-edit-dialog");
 const participantEditForm = document.getElementById("participant-edit-form");
 const participantEditName = document.getElementById("participant-edit-name");
@@ -3176,11 +3178,14 @@ window.renderContingentList = () => {
         contingentMap[cName]++;
     });
     
-    const sortedContingents = Object.keys(contingentMap).sort();
-    
     if (contingentListBadge) {
         contingentListBadge.textContent = `${totalContingents} Kontingen`;
     }
+    
+    const searchQuery = (adminContingentSearch?.value || "").trim().toUpperCase();
+    const sortedContingents = Object.keys(contingentMap)
+        .filter(c => !searchQuery || c.includes(searchQuery))
+        .sort();
     
     adminContingentBody.innerHTML = "";
     
