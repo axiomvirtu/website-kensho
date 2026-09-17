@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
-    <main class="page-shell public-maintenance">
+    <main class="page-shell">
         <header class="app-header" id="public-app-header">
             <div class="brand-bar">
                 <div class="brand-identity">
@@ -39,7 +39,7 @@
             <p class="intro">Daftar resmi peserta yang telah terverifikasi pada kategori Festival dan Open.</p>
         </section>
 
-        <section class="maintenance-panel" aria-live="polite">
+        <section class="maintenance-panel" aria-live="polite" hidden>
             <div class="maintenance-icon-wrap" aria-hidden="true">
                 <!-- Gear utama -->
                 <svg class="maintenance-gear-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -57,8 +57,8 @@
             <p>Silakan kembali beberapa saat lagi.</p>
         </section>
 
-        <section class="summary-grid" aria-label="Ringkasan data" hidden>
-            <div class="summary-card card-total" hidden>
+        <section class="summary-grid" aria-label="Ringkasan data">
+            <div class="summary-card card-total">
                 <div class="card-header">
                     <span class="card-label">Total Peserta</span>
                     <svg class="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -148,6 +148,6 @@
             </div>
         </section>
     </main>
-    <script type="module" src="public.js?v=7"></script>
+    <script type="module" src="public.js?v=9"></script>
 </body>
 </html>

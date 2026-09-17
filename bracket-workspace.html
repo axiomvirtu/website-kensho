@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bagan Pertandingan | KenshoTech Ecosystem</title>
     <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 </head>
 <body>
     <main class="page-shell bracket-workspace-page">
@@ -15,6 +16,7 @@
                     <div class="brand-titles"><span class="brand-name">KENSHOTECH ECOSYSTEM</span><span class="brand-tagline">Persiapan Bagan</span></div>
                 </div>
                 <div class="header-actions">
+                    <button id="open-batch-dialog" class="button primary-button" type="button" style="background:#f59e0b; border-color:#f59e0b; color: white;">⚡ Buat Semua Bagan</button>
                     <a class="header-link" href="admin.html">Kembali ke Admin</a>
                     <button id="open-bracket-rules" class="button secondary-button" type="button">Aturan Pengacakan</button>
                     <button id="open-bracket-display" class="button primary-button" type="button">Buka Preview Bagan</button>
@@ -38,7 +40,13 @@
                 <label class="bracket-class-picker bracket-category-picker"><span>Kategori</span><select id="bracket-category-select"><option value="Open">Open</option><option value="Festival">Festival</option></select></label>
                 <label class="bracket-class-picker bracket-class-wide"><span>Kelas</span><select id="bracket-class-select"><option value="">Memuat kelas...</option></select></label>
             </div>
-            <div class="bracket-class-summary"><strong id="bracket-selected-class">Belum ada kelas dipilih</strong><span id="bracket-participant-count">0 peserta</span></div>
+            <div class="bracket-class-summary">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <strong id="bracket-selected-class">Belum ada kelas dipilih</strong>
+                    <span id="bracket-class-save-badge"></span>
+                </div>
+                <span id="bracket-participant-count">0 peserta</span>
+            </div>
             <div id="bracket-contingent-summary" class="bracket-contingent-summary" aria-label="Jumlah peserta per kontingen"></div>
             
             <div class="bracket-actions-toolbar">
@@ -46,12 +54,23 @@
                     <button id="btn-smart-shuffle" class="button primary-button" type="button" title="Acak urutan dengan memisahkan kontingen yang sama">
                         🎲 Acak Pintar (Anti-Bentrok)
                     </button>
+                    <button id="btn-save-bracket" class="button primary-button" type="button" style="background:#0a877d; border-color:#0a877d;" title="Simpan urutan dan bagan kelas ini ke database">
+                        💾 Simpan Bagan
+                    </button>
+                    <button id="btn-export-excel" class="button primary-button" type="button" style="background:#1d4ed8; border-color:#1d4ed8; color: white;" title="Cetak daftar posisi peserta ke format Excel">
+                        ⬇️ Cetak Excel
+                    </button>
                     <button id="btn-reset-order" class="button secondary-button" type="button" title="Kembalikan susunan peserta ke urutan database">
                         ↺ Reset Urutan
                     </button>
                 </div>
-                <div class="bracket-clash-indicator" id="bracket-clash-status">
-                    <span class="clash-pill is-safe">✓ Semua kontingen aman</span>
+                <div class="bracket-indicators" style="display: flex; align-items: center; gap: 8px;">
+                    <div class="bracket-clash-indicator" id="bracket-clash-status">
+                        <span class="clash-pill is-safe">✓ Semua kontingen aman</span>
+                    </div>
+                    <div class="bracket-cloud-indicator" id="bracket-cloud-status">
+                        <span class="clash-pill" style="background: #eaf4f2; color: #086b61; border: 1px solid #c2e4dd;">☁️ Cloud Siap</span>
+                    </div>
                 </div>
             </div>
 
@@ -82,7 +101,13 @@
             </div>
             <section class="inline-bracket-preview" aria-labelledby="inline-bracket-title">
                 <div class="inline-bracket-header">
-                    <div><p class="eyebrow">PREVIEW POSISI</p><h2 id="inline-bracket-title">Bagan 16 Peserta</h2></div>
+                    <div>
+                        <p class="eyebrow" style="display: flex; gap: 8px; align-items: center;">
+                            <span>PREVIEW POSISI</span>
+                            <span id="inline-bracket-event-meta" style="color: var(--primary-dark); font-weight: 700; border-left: 2px solid var(--border-color); padding-left: 8px;"></span>
+                        </p>
+                        <h2 id="inline-bracket-title">Bagan 16 Peserta</h2>
+                    </div>
                     <div class="inline-bracket-header-meta">
                         <span class="bracket-hint-text">💡 Klik slot peserta pada bagan untuk langsung bertukar posisi</span>
                         <span id="inline-bracket-count" class="status-message">0 peserta</span>
@@ -122,6 +147,103 @@
             <label class="bracket-rule-item"><input type="checkbox" data-bracket-rule="lockApprovedDraw" checked><span><strong>Kunci hasil disetujui</strong><small>Hasil tidak berubah tanpa dibuka.</small></span></label>
         </div>
         <p id="bracket-rules-status" class="status-message success">Aturan tersimpan</p>
+    </dialog>
+
+    <dialog id="batch-bracket-dialog" class="bracket-rules-dialog" style="max-width: 550px;">
+        <div class="bracket-rules-modal-header">
+            <div>
+                <p class="eyebrow">BATCH PROCESS</p>
+                <h2>Buat Semua Bagan Otomatis</h2>
+                <p class="settings-help">Acak dan simpan bagan secara masal.</p>
+            </div>
+            <button id="close-batch-dialog" class="button secondary-button" type="button">Tutup</button>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+            <label class="bracket-rule-item" style="display:flex; align-items:flex-start; gap:10px;">
+                <input type="radio" name="batch-target" value="missing" checked>
+                <span><strong>Hanya kelas yang belum ada bagan</strong><small style="display:block; color:#666; margin-top:4px;">Rekomendasi agar bagan yang sudah disesuaikan manual tidak rusak.</small></span>
+            </label>
+            <label class="bracket-rule-item" style="display:flex; align-items:flex-start; gap:10px;">
+                <input type="radio" name="batch-target" value="all">
+                <span><strong>Seluruh kelas (Acak ulang semua)</strong><small style="display:block; color:#666; margin-top:4px;">Akan menimpa bagan yang sudah ada dan tersimpan.</small></span>
+            </label>
+            <hr style="border:none; border-top:1px solid #ddd; margin:10px 0;">
+            <label class="bracket-rule-item" style="display:flex; align-items:flex-start; gap:10px;">
+                <input type="radio" name="batch-category" value="current" checked>
+                <span><strong id="batch-current-category-label">Kategori saat ini (Open)</strong></span>
+            </label>
+            <label class="bracket-rule-item" style="display:flex; align-items:flex-start; gap:10px;">
+                <input type="radio" name="batch-category" value="all">
+                <span><strong>Semua kategori (Open & Festival)</strong></span>
+            </label>
+            
+            <div id="batch-progress-container" style="display: none; margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #333;">
+                    <span id="batch-progress-text">Memproses...</span>
+                    <span id="batch-progress-percent">0%</span>
+                </div>
+                <div style="width: 100%; background: #eee; height: 12px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                    <div id="batch-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0a877d, #0d9f93); transition: width 0.3s ease;"></div>
+                </div>
+                <p id="batch-current-class-label" style="font-size: 12px; color: #666; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Menyiapkan data...</p>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px; gap: 10px;">
+                <button id="btn-cancel-batch" class="button secondary-button" type="button" style="display:none;">Batal</button>
+                <button id="btn-start-batch" class="button primary-button" type="button" style="background:#0a877d; border-color:#0a877d; padding: 10px 20px;">Mulai Buat Bagan</button>
+            </div>
+        </div>
+    </dialog>
+    <dialog id="export-excel-modal" class="bracket-rules-dialog" style="max-width: 650px; padding: 0; overflow: hidden;">
+        <div class="bracket-rules-modal-header" style="padding: 20px;">
+            <div>
+                <p class="eyebrow">EXPORT EXCEL</p>
+                <h2>Pilih Kelas untuk Dicetak</h2>
+                <p class="settings-help">Pilih kelas yang ingin didownload ke format Excel.</p>
+            </div>
+            <button id="close-export-excel" class="button secondary-button" type="button">Tutup</button>
+        </div>
+        
+        <!-- Main Tabs -->
+        <div class="export-tabs" style="display: flex; border-bottom: 1px solid #ddd; padding: 0 20px;">
+            <button class="export-main-tab is-active" data-tab="Open" style="flex: 1; padding: 12px 20px; background: none; border: none; border-bottom: 3px solid #1d4ed8; color: #1d4ed8; font-weight: bold; cursor: pointer; transition: all 0.2s;">🏆 Kategori Open</button>
+            <button class="export-main-tab" data-tab="Festival" style="flex: 1; padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: #666; font-weight: bold; cursor: pointer; transition: all 0.2s;">🎊 Kategori Festival</button>
+        </div>
+
+        <!-- Sub Tabs Container -->
+        <div style="padding: 15px 20px 0 20px;">
+            <div class="export-sub-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="export-sub-tab is-active" data-status="ready" style="padding: 6px 15px; border-radius: 20px; border: 1px solid #10b981; background: #10b981; color: white; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">✅ Siap <span id="count-ready" style="opacity:0.8; font-weight:normal; margin-left:4px;">(0)</span></button>
+                <button class="export-sub-tab" data-status="revision" style="padding: 6px 15px; border-radius: 20px; border: 1px solid #f59e0b; background: white; color: #b45309; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">⚠️ Revisi <span id="count-revision" style="opacity:0.8; font-weight:normal; margin-left:4px;">(0)</span></button>
+                <button class="export-sub-tab" data-status="not_ready" style="padding: 6px 15px; border-radius: 20px; border: 1px solid #ef4444; background: white; color: #b91c1c; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">❌ Belum Siap <span id="count-not-ready" style="opacity:0.8; font-weight:normal; margin-left:4px;">(0)</span></button>
+            </div>
+        </div>
+
+        <div style="padding: 0 20px 20px 20px; display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer;" id="excel-export-select-all-container">
+                    <input type="checkbox" id="excel-export-select-all"> Pilih Semua (di tab ini)
+                </label>
+                <span id="excel-export-count" style="font-size: 13px; color: #666; font-weight: bold; background:#f1f5f9; padding:4px 8px; border-radius:4px;">0 Terpilih Total</span>
+            </div>
+            
+            <div id="excel-export-class-list" style="max-height: 250px; min-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; background: #fafafa; border-radius: 6px; padding: 10px;">
+                <!-- Checkboxes populated via JS -->
+            </div>
+            
+            <!-- PANEL TOMBOL OPEN -->
+            <div id="export-panel-open" style="display: flex; justify-content: flex-end; margin-top: 5px; gap: 10px; border-top: 1px solid #ddd; padding-top: 15px; flex-wrap: wrap;">
+                <button id="btn-cancel-excel-open" class="button secondary-button" type="button" style="margin-right: auto;">Batal</button>
+                <button id="btn-download-excel-open" class="button secondary-button" type="button" style="padding: 10px 15px; border-color: #1d4ed8; color: #1d4ed8;">⬇️ Download Open (Per Sheet)</button>
+                <button id="btn-download-master-open" class="button primary-button" type="button" style="background:#10b981; border-color:#10b981; padding: 10px 15px;">⬇️ Download Open (Master Mapping)</button>
+            </div>
+
+            <!-- PANEL TOMBOL FESTIVAL -->
+            <div id="export-panel-festival" style="display: none; justify-content: flex-end; margin-top: 5px; gap: 10px; border-top: 1px solid #ddd; padding-top: 15px; flex-wrap: wrap;">
+                <button id="btn-cancel-excel-festival" class="button secondary-button" type="button" style="margin-right: auto;">Batal</button>
+                <button id="btn-download-excel-festival" class="button primary-button" type="button" style="background:#f59e0b; border-color:#f59e0b; padding: 10px 15px;">⬇️ Download Rekap Festival</button>
+            </div>
+        </div>
     </dialog>
     <script type="module" src="bracket-workspace.js"></script>
 </body>

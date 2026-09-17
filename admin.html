@@ -415,6 +415,7 @@
                         <div id="schedule-board-panel" class="schedule-tab-panel">
                             <div class="schedule-board-toolbar">
                                 <button id="schedule-shuffle-button" class="button secondary-button" type="button">Acak Jadwal</button>
+                                <button id="schedule-print-button" class="button primary-button" type="button" style="background-color: var(--primary-accent); margin-left: auto;">Cetak Jadwal (Excel)</button>
                             </div>
                             <div id="schedule-board" class="schedule-board" aria-label="Papan jadwal per Tatami"></div>
                         </div>
@@ -423,6 +424,14 @@
                                 <button class="category-button schedule-category-tab active" data-schedule-category="Open" type="button">Open</button>
                                 <button class="category-button schedule-category-tab" data-schedule-category="Festival" type="button">Festival</button>
                             </nav>
+                            <label class="schedule-tatami-control">
+                                <span>Jumlah Hari</span>
+                                <select id="schedule-day-count">
+                                    <option value="1">1 Hari</option><option value="2">2 Hari</option><option value="3">3 Hari</option><option value="4">4 Hari</option><option value="5">5 Hari</option>
+                                    <option value="6">6 Hari</option><option value="7">7 Hari</option>
+                                </select>
+                            </label>
+                            <div id="schedule-days-container" style="display: flex; gap: 16px; margin-top: 16px; margin-bottom: 24px;"></div>
                             <label class="schedule-tatami-control">
                                 <span>Jumlah Tatami</span>
                                 <select id="schedule-tatami-count">

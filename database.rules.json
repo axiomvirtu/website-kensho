@@ -29,7 +29,7 @@
       ".write": "auth != null && root.child('pengaturan/superAdminUid').val() == auth.uid"
     },
     "bagan": {
-      ".read": "auth != null",
+      ".read": true,
       ".write": "auth != null"
     }
   }

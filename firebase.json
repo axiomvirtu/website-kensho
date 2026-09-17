@@ -12,7 +12,11 @@
       "firebase.json",
       "firestore.rules",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "Kessen/**",
+      "*.py",
+      "*.xlsx",
+      "*.md"
     ],
     "cleanUrls": true,
     "trailingSlash": false

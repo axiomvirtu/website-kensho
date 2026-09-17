@@ -20,6 +20,7 @@ const lastUpdated = document.getElementById("last-updated");
 const refreshButton = document.getElementById("refresh-data");
 const championshipTitle = document.getElementById("championship-title");
 const searchInput = document.getElementById("participant-search");
+const clearSearchBtn = document.getElementById("clear-search");
 const previousPageButton = document.getElementById("previous-page");
 const nextPageButton = document.getElementById("next-page");
 const pageInfo = document.getElementById("page-info");
@@ -233,9 +234,25 @@ async function loadParticipants(forceFullDownload = false, attempt = 0) {
 
         setStatus(hasCachedData ? "Ada pembaruan data panitia. Mengunduh data terbaru..." : "Mengambil data peserta ke database...");
 
+        let mixClasses = [];
+        try {
+            const mixSnapshot = await get(ref(rtdb, "bracketMixClasses"));
+            mixClasses = mixSnapshot.val() || [];
+        } catch (error) {
+            console.warn("Gagal memuat daftar gabungan kelas:", error);
+        }
+
+        const originalClassMap = {};
+        mixClasses.forEach(mix => {
+            (mix.sourceParticipants || []).forEach(p => {
+                originalClassMap[p.id] = p.className;
+            });
+        });
+
         const participants = (await loadRtdbParticipants()).map(participant => ({
             ...participant,
-            category: participant.kategori || "Festival"
+            category: participant.kategori || "Festival",
+            "KELAS PERTANDINGAN": originalClassMap[participant.id] || participant["KELAS PERTANDINGAN"]
         }));
 
         allParticipants = sortParticipants(participants);
@@ -380,9 +397,17 @@ refreshButton.addEventListener("dblclick", event => {
 });
 searchInput.addEventListener("input", event => {
     searchTerm = event.target.value.trim().toLocaleLowerCase("id-ID");
+    if (clearSearchBtn) clearSearchBtn.hidden = searchTerm.length === 0;
     currentPage = 1;
     renderTable();
 });
+if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        searchInput.dispatchEvent(new Event("input"));
+        searchInput.focus();
+    });
+}
 previousPageButton.addEventListener("click", () => {
     if (currentPage > 1) {
         currentPage -= 1;

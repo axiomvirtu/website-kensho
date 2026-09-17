@@ -39,6 +39,7 @@ const scheduleView = document.getElementById("schedule-view");
 const scheduleBody = document.getElementById("schedule-body");
 const scheduleTatamiCount = document.getElementById("schedule-tatami-count");
 const scheduleShuffleButton = document.getElementById("schedule-shuffle-button");
+const schedulePrintButton = document.getElementById("schedule-print-button");
 const scheduleAutoAssignButton = document.getElementById("schedule-auto-assign-button");
 const scheduleBoard = document.getElementById("schedule-board");
 const scheduleBoardPanel = document.getElementById("schedule-board-panel");
@@ -46,6 +47,9 @@ const scheduleSettingsPanel = document.getElementById("schedule-settings-panel")
 const scheduleTatamiStorageKey = "admin_schedule_tatami_settings";
 const scheduleTatamiCountStorageKey = "admin_schedule_tatami_count";
 const scheduleOrderStorageKey = "admin_schedule_tatami_order_v3";
+const scheduleDaysStorageKey = "admin_schedule_days_settings";
+const scheduleDayCount = document.getElementById("schedule-day-count");
+const scheduleDaysContainer = document.getElementById("schedule-days-container");
 if (scheduleTatamiCount) {
     scheduleTatamiCount.value = localStorage.getItem(scheduleTatamiCountStorageKey) || "1";
 }
@@ -59,6 +63,7 @@ const previewPanel = document.getElementById("preview-panel");
 const accessCodeForm = document.getElementById("access-code-form");
 const newAccessCode = document.getElementById("new-access-code");
 const newAccessLabel = document.getElementById("new-access-label");
+const newAccessRole = document.getElementById("new-access-role");
 const accessCodeStatus = document.getElementById("access-code-status");
 const accessCodeList = document.getElementById("access-code-list");
 const adminTotalCount = document.getElementById("admin-total-count");
@@ -67,9 +72,12 @@ const adminOpenIndividualCount = document.getElementById("admin-open-individual-
 const adminOpenTeamCount = document.getElementById("admin-open-team-count");
 const adminFestivalCount = document.getElementById("admin-festival-count");
 const participantListView = document.getElementById("participant-list-view");
+const contingentListView = document.getElementById("contingent-list-view");
 const classRecapView = document.getElementById("class-recap-view");
 const medalCountView = document.getElementById("medal-count-view");
 const adminParticipantBody = document.getElementById("admin-participant-body");
+const adminContingentBody = document.getElementById("admin-contingent-body");
+const contingentListBadge = document.getElementById("contingent-list-badge");
 const classRecapBody = document.getElementById("class-recap-body");
 const medalStatus = document.getElementById("medal-status");
 const goldMedalCount = document.getElementById("gold-medal-count");
@@ -274,7 +282,13 @@ async function loadAccessCodes() {
         label.textContent = code.label || "Tanpa label";
         const date = document.createElement("small");
         date.textContent = code.createdAt ? new Date(code.createdAt).toLocaleString("id-ID") : "";
-        details.append(label, date);
+        const roleBadge = document.createElement("small");
+        roleBadge.style.display = "block";
+        roleBadge.style.marginTop = "2px";
+        roleBadge.style.color = "var(--accent)";
+        roleBadge.style.fontWeight = "600";
+        roleBadge.textContent = code.role === "superadmin" ? "Peran: Super Admin" : "Peran: Admin Biasa";
+        details.append(label, roleBadge, date);
         const revokeButton = document.createElement("button");
         revokeButton.type = "button";
         revokeButton.className = "button secondary-button";
@@ -373,6 +387,7 @@ async function loadParticipantSummary(force = false) {
     renderMedalRecap();
     renderPaymentList();
     renderScheduleList();
+    if (typeof window.renderContingentList === "function") window.renderContingentList();
     const festivalParticipants = participants.filter(participant => participant.kategori === "Festival");
     const openParticipants = participants.filter(participant => participant.kategori === "Open");
     const festivalTotal = adjustedParticipantCount(festivalParticipants, "Festival", classTypeSettings);
@@ -492,7 +507,36 @@ async function saveSlowTrackFormula(participantCount, rawPoolValue, medalText, s
     }
 }
 
+function updateParticipantTabCounts() {
+    const tabOpen = document.getElementById("tab-count-open");
+    const tabFestival = document.getElementById("tab-count-festival");
+    const tabBeregu = document.getElementById("tab-count-beregu");
+    const totalBadge = document.getElementById("participant-list-badge");
+
+    let countOpen = 0;
+    let countFestival = 0;
+    let countBeregu = 0;
+
+    adminParticipants.forEach(participant => {
+        if (participant.kategori === "Open") {
+            if (isTeamClass(participant["KELAS PERTANDINGAN"], classTypeSettings)) {
+                countBeregu += 1;
+            } else {
+                countOpen += 1;
+            }
+        } else if (participant.kategori === "Festival") {
+            countFestival += 1;
+        }
+    });
+
+    if (tabOpen) tabOpen.textContent = countOpen.toLocaleString("id-ID");
+    if (tabFestival) tabFestival.textContent = countFestival.toLocaleString("id-ID");
+    if (tabBeregu) tabBeregu.textContent = countBeregu.toLocaleString("id-ID");
+    if (totalBadge) totalBadge.textContent = `${adminParticipants.length.toLocaleString("id-ID")} Peserta Terdaftar`;
+}
+
 function renderAdminParticipantList() {
+    updateParticipantTabCounts();
     const filteredParticipants = getAdminListParticipants();
     const totalPages = Math.max(1, Math.ceil(filteredParticipants.length / adminPageSize));
     adminCurrentPage = Math.min(adminCurrentPage, totalPages);
@@ -502,12 +546,24 @@ function renderAdminParticipantList() {
     const visibleParticipants = filteredParticipants.slice(start, start + adminPageSize);
     visibleParticipants.forEach((participant, index) => {
         const row = document.createElement("tr");
-        [start + index + 1, participant["NAMA LENGKAP"] || "-", participant["KELAS PERTANDINGAN"] || "-"].forEach(value => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
 
+        // 1. Kolom No
+        const numCell = document.createElement("td");
+        numCell.style.textAlign = "center";
+        numCell.textContent = String(start + index + 1);
+        row.appendChild(numCell);
+
+        // 2. Kolom Nama Lengkap
+        const nameCell = document.createElement("td");
+        nameCell.textContent = participant["NAMA LENGKAP"] || "-";
+        row.appendChild(nameCell);
+
+        // 3. Kolom Kelas Pertandingan
+        const classCell = document.createElement("td");
+        classCell.textContent = participant["KELAS PERTANDINGAN"] || "-";
+        row.appendChild(classCell);
+
+        // 4. Kolom Kontingen
         if (activeAdminCategory === "Beregu") {
             const teamKey = getTeamKey(participant);
             const firstTeamIndex = visibleParticipants.findIndex(currentParticipant => getTeamKey(currentParticipant) === teamKey);
@@ -524,21 +580,46 @@ function renderAdminParticipantList() {
             row.appendChild(teamCell);
         }
 
+        // 5. Kolom Aksi (Hanya Ikon Saja)
         const actionCell = document.createElement("td");
+        actionCell.style.textAlign = "center";
+        actionCell.style.whiteSpace = "nowrap";
+
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "action-btn-group";
+
+        // Tombol Edit (Icon Only)
         const editButton = document.createElement("button");
         editButton.type = "button";
-        editButton.className = "button secondary-button participant-edit-button";
+        editButton.className = "action-icon-btn edit-icon-btn";
         editButton.dataset.editParticipant = participant.id || "";
-        editButton.textContent = "Edit";
+        editButton.title = `Edit: ${participant["NAMA LENGKAP"] || "Peserta"}`;
+        editButton.setAttribute("aria-label", "Edit data peserta");
         editButton.disabled = !participant.id;
+        editButton.innerHTML = `
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        `;
 
+        // Tombol Hapus (Icon Only)
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
-        deleteButton.className = "button secondary-button participant-delete-button";
+        deleteButton.className = "action-icon-btn delete-icon-btn";
         deleteButton.dataset.deleteParticipant = participant.id || "";
-        deleteButton.textContent = "Hapus";
+        deleteButton.title = `Hapus: ${participant["NAMA LENGKAP"] || "Peserta"}`;
+        deleteButton.setAttribute("aria-label", "Hapus data peserta");
         deleteButton.disabled = !participant.id;
-        actionCell.append(editButton, deleteButton);
+        deleteButton.innerHTML = `
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        `;
+
+        actionGroup.append(editButton, deleteButton);
+        actionCell.appendChild(actionGroup);
         row.appendChild(actionCell);
         adminParticipantBody.appendChild(row);
     });
@@ -548,7 +629,7 @@ function renderAdminParticipantList() {
         const cell = document.createElement("td");
         cell.colSpan = 5;
         cell.className = "empty-state";
-        cell.textContent = "Belum ada peserta pada kategori ini.";
+        cell.textContent = adminParticipantSearchTerm ? "Tidak ada peserta yang cocok dengan pencarian." : "Belum ada peserta pada kategori ini.";
         row.appendChild(cell);
         adminParticipantBody.appendChild(row);
     }
@@ -688,6 +769,14 @@ function renderClassRecap() {
     });
 }
 
+function formatScheduleValue(val) {
+    if (!val) return "Belum dijadwalkan";
+    if (/^\d+$/.test(val)) return `Hari 1 - Tatami ${val}`;
+    const m = val.match(/^D(\d+)-T(\d+)$/);
+    if (m) return `Hari ${m[1]} - Tatami ${m[2]}`;
+    return val;
+}
+
 function renderScheduleList() {
     if (!scheduleBody) return;
     const classes = new Map();
@@ -695,18 +784,51 @@ function renderScheduleList() {
         const category = normalizeParticipantCategory(participant.kategori);
         const className = normalizeClassName(participant["KELAS PERTANDINGAN"]);
         const key = `${category}::${className}`;
-        if (!classes.has(key)) classes.set(key, { category, className, count: 0 });
+        if (!classes.has(key)) classes.set(key, { category, className, count: 0, isTeam: isTeamClass(className, classTypeSettings) });
         classes.get(key).count += 1;
     });
+    classes.forEach(item => {
+        if (item.isTeam) item.count = Math.ceil(item.count / 3);
+    });
 
-    const allRows = [...classes.values()].sort(compareScheduleClasses);
+    const allRows = [...classes.values()]
+        .filter(item => !(item.category === "Open" && item.count <= 1))
+        .sort(compareScheduleClasses);
     const rows = allRows.filter(item => item.category === activeScheduleCategory);
     const tatamiCount = Number(scheduleTatamiCount?.value || 1);
     const savedAssignments = loadScheduleTatamiAssignments();
+    const daySettings = getScheduleDaySettings();
+
     scheduleBody.innerHTML = rows.length
-        ? rows.map((item, index) => `
-            <tr><td>${index + 1}</td><td>${item.category}</td><td>${escapeHtml(item.className)}</td><td>${item.count.toLocaleString("id-ID")}</td><td><select class="schedule-tatami-select" data-schedule-class="${escapeHtml(`${item.category}::${item.className}`)}"><option value="">Pilih</option>${Array.from({ length: tatamiCount }, (_, tatamiIndex) => `<option value="${tatamiIndex + 1}" ${String(savedAssignments[`${item.category}::${item.className}`] || "") === String(tatamiIndex + 1) ? "selected" : ""}>Tatami ${tatamiIndex + 1}</option>`).join("")}</select></td><td><span class="schedule-status">${savedAssignments[`${item.category}::${item.className}`] ? `Tatami ${savedAssignments[`${item.category}::${item.className}`]}` : "Belum dijadwalkan"}</span></td></tr>
-        `).join("")
+        ? rows.map((item, index) => {
+            const validDays = daySettings.filter(s => s.category === "Semua" || s.category === item.category);
+            let optionsHtml = '<option value="">Pilih</option>';
+            const savedValueRaw = String(savedAssignments[`${item.category}::${item.className}`] || "");
+            const savedValue = /^\d+$/.test(savedValueRaw) ? `D1-T${savedValueRaw}` : savedValueRaw;
+            
+            validDays.forEach(dayInfo => {
+                for (let t = 1; t <= tatamiCount; t++) {
+                    const val = `D${dayInfo.day}-T${t}`;
+                    const selected = savedValue === val ? "selected" : "";
+                    optionsHtml += `<option value="${val}" ${selected}>Hari ${dayInfo.day} - Tatami ${t}</option>`;
+                }
+            });
+
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.category}</td>
+                    <td>${escapeHtml(item.className)}</td>
+                    <td>${item.count.toLocaleString("id-ID")}</td>
+                    <td>
+                        <select class="schedule-tatami-select" data-schedule-class="${escapeHtml(`${item.category}::${item.className}`)}">
+                            ${optionsHtml}
+                        </select>
+                    </td>
+                    <td><span class="schedule-status">${formatScheduleValue(savedValue)}</span></td>
+                </tr>
+            `;
+        }).join("")
         : '<tr><td colspan="6" class="empty-state">Belum ada data kelas.</td></tr>';
     renderScheduleBoard(allRows, tatamiCount, savedAssignments);
 }
@@ -722,36 +844,97 @@ function loadScheduleOrders() {
 
 function renderScheduleBoard(rows, tatamiCount, assignments) {
     if (!scheduleBoard) return;
-    const grouped = Array.from({ length: tatamiCount }, (_, index) => ({ number: index + 1, classes: [] }));
+    const daySettings = getScheduleDaySettings();
     const orders = loadScheduleOrders();
+
+    const boardData = daySettings.map(d => ({
+        day: d.day,
+        tatamis: Array.from({ length: tatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
+    }));
+
     rows.forEach(item => {
-        const tatami = Number(assignments[`${item.category}::${item.className}`]);
-        if (tatami >= 1 && tatami <= tatamiCount) grouped[tatami - 1].classes.push(item);
-    });
-    grouped.forEach(group => {
-        const order = orders[String(group.number)] || [];
-        group.classes.sort((first, second) => {
-            const firstIndex = order.indexOf(`${first.category}::${first.className}`);
-            const secondIndex = order.indexOf(`${second.category}::${second.className}`);
-            if (firstIndex !== -1 || secondIndex !== -1) {
-                return (firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex);
+        const savedValueRaw = String(assignments[`${item.category}::${item.className}`] || "");
+        const savedValue = /^\d+$/.test(savedValueRaw) ? `D1-T${savedValueRaw}` : savedValueRaw;
+        const m = savedValue.match(/^D(\d+)-T(\d+)$/);
+        if (m) {
+            const dIdx = parseInt(m[1]) - 1;
+            const tIdx = parseInt(m[2]) - 1;
+            if (boardData[dIdx] && boardData[dIdx].tatamis[tIdx]) {
+                boardData[dIdx].tatamis[tIdx].classes.push(item);
             }
-            return compareScheduleClasses(first, second);
+        }
+    });
+
+    boardData.forEach(dayGroup => {
+        dayGroup.tatamis.forEach(group => {
+            const order = orders[`D${dayGroup.day}-T${group.number}`] || orders[String(group.number)] || [];
+            group.classes.sort((first, second) => {
+                const firstIndex = order.indexOf(`${first.category}::${first.className}`);
+                const secondIndex = order.indexOf(`${second.category}::${second.className}`);
+                if (firstIndex !== -1 || secondIndex !== -1) {
+                    return (firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex);
+                }
+                return compareScheduleClasses(first, second);
+            });
         });
     });
-    scheduleBoard.innerHTML = grouped.map(group => `
-        <article class="schedule-tatami-card">
-            <header><span>Tatami ${group.number}</span><strong>${group.classes.reduce((total, item) => total + item.count, 0).toLocaleString("id-ID")} peserta <small>(${group.classes.length} kelas)</small></strong></header>
-            <div class="schedule-card-list">${group.classes.length ? group.classes.map((item, index) => `<div class="schedule-card-item"><b>${index + 1}</b><div><strong>${escapeHtml(item.className)}</strong><small>${item.category} · ${item.count.toLocaleString("id-ID")} peserta</small></div></div>`).join("") : '<p class="schedule-empty">Belum ada kelas</p>'}</div>
-        </article>
+
+    const tabsHtml = `
+        <nav class="schedule-tabs" aria-label="Tab Hari Pertandingan" style="margin-bottom: 20px;">
+            ${boardData.map((d, i) => `
+                <button class="category-button schedule-day-tab ${i === 0 ? 'active' : ''}" data-day="${d.day}" type="button">
+                    Hari Ke-${d.day}
+                </button>
+            `).join('')}
+        </nav>
+    `;
+
+    const panelsHtml = boardData.map((dayGroup, i) => `
+        <div class="schedule-day-panel" data-day="${dayGroup.day}" ${i === 0 ? 'style="display:block;"' : 'hidden style="display:none;"'}>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start;">
+                ${dayGroup.tatamis.map(group => `
+                    <article class="schedule-tatami-card">
+                        <header><span>Tatami ${group.number}</span><strong>${group.classes.reduce((total, item) => total + item.count, 0).toLocaleString("id-ID")} peserta <small>(${group.classes.length} kelas)</small></strong></header>
+                        <div class="schedule-card-list">${group.classes.length ? group.classes.map((item, index) => `<div class="schedule-card-item"><b>${index + 1}</b><div><strong>${escapeHtml(item.className)}</strong><small>${item.category} · ${item.count.toLocaleString("id-ID")} peserta</small></div></div>`).join("") : '<p class="schedule-empty">Belum ada kelas</p>'}</div>
+                    </article>
+                `).join("")}
+            </div>
+        </div>
     `).join("");
+
+    scheduleBoard.style.display = 'block';
+    scheduleBoard.innerHTML = tabsHtml + panelsHtml;
+
+    // Attach event listeners for the tabs
+    const dayTabs = scheduleBoard.querySelectorAll('.schedule-day-tab');
+    const dayPanels = scheduleBoard.querySelectorAll('.schedule-day-panel');
+    
+    dayTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const day = tab.dataset.day;
+            dayTabs.forEach(t => {
+                t.classList.toggle('active', t === tab);
+            });
+            dayPanels.forEach(p => {
+                if (p.dataset.day === day) {
+                    p.removeAttribute('hidden');
+                    p.style.display = 'block'; // ensure it shows
+                } else {
+                    p.setAttribute('hidden', '');
+                    p.style.display = 'none';
+                }
+            });
+        });
+    });
 }
 
 const SCHEDULE_AGE_ORDER = ["PRA USIA DINI", "USIA DINI", "PRA PEMULA", "PEMULA", "KADET", "JUNIOR", "UNDER-21", "SENIOR"];
+const FESTIVAL_AGE_ORDER = ["PAUD/TK", "SD 1-3", "SD 4-6", "SMP", "SMA", "MAHASISWA/UMUM", "MAHASISWA", "UMUM"];
 
 function compareScheduleClasses(first, second) {
     const firstName = first.className.toLocaleUpperCase("id-ID");
     const secondName = second.className.toLocaleUpperCase("id-ID");
+    
     const categoryOrder = { Open: 0, Festival: 1 };
     const categoryComparison = (categoryOrder[first.category] ?? 2) - (categoryOrder[second.category] ?? 2);
     if (categoryComparison) return categoryComparison;
@@ -766,48 +949,83 @@ function compareScheduleClasses(first, second) {
     const typeComparison = getTypeOrder(firstName) - getTypeOrder(secondName);
     if (typeComparison) return typeComparison;
 
-    const firstAge = SCHEDULE_AGE_ORDER.findIndex(age => firstName.includes(age));
-    const secondAge = SCHEDULE_AGE_ORDER.findIndex(age => secondName.includes(age));
-    const ageComparison = (firstAge === -1 ? SCHEDULE_AGE_ORDER.length : firstAge) - (secondAge === -1 ? SCHEDULE_AGE_ORDER.length : secondAge);
+    const ageOrderList = first.category === "Festival" ? FESTIVAL_AGE_ORDER : SCHEDULE_AGE_ORDER;
+    const firstAge = ageOrderList.findIndex(age => firstName.includes(age));
+    const secondAge = ageOrderList.findIndex(age => secondName.includes(age));
+    const ageComparison = (firstAge === -1 ? ageOrderList.length : firstAge) - (secondAge === -1 ? ageOrderList.length : secondAge);
     if (ageComparison) return ageComparison;
 
+    const getGenderOrder = name => name.includes("PUTRA") ? 0 : name.includes("PUTRI") ? 1 : 2;
+    const genderComparison = getGenderOrder(firstName) - getGenderOrder(secondName);
+    if (genderComparison) return genderComparison;
+
     if (firstName.includes("KUMITE") && secondName.includes("KUMITE")) {
-        const getWeight = name => Number(name.match(/([+-]?\d+)\s*KG/)?.[1] ?? Number.POSITIVE_INFINITY);
+        const getWeight = name => {
+            const match = name.match(/([+-]?)(\d+)\s*KG/);
+            if (!match) return Number.POSITIVE_INFINITY;
+            const sign = match[1] === '-' ? -1 : 1;
+            const val = Number(match[2]);
+            return sign === -1 ? val : 10000 + val;
+        };
         const weightComparison = getWeight(firstName) - getWeight(secondName);
         if (weightComparison) return weightComparison;
     }
 
-    const genderOrder = name => name.includes("PUTRA") ? 0 : name.includes("PUTRI") ? 1 : 2;
-    return genderOrder(firstName) - genderOrder(secondName) || firstName.localeCompare(secondName, "id", { sensitivity: "base" });
+    return firstName.localeCompare(secondName, "id", { sensitivity: "base" });
 }
 
 function autoAssignSchedule() {
     const tatamiCount = Number(scheduleTatamiCount?.value || 1);
+    const daySettings = getScheduleDaySettings();
     const classes = new Map();
     adminParticipants
         .forEach(participant => {
             const category = normalizeParticipantCategory(participant.kategori);
             const className = normalizeClassName(participant["KELAS PERTANDINGAN"]);
             const key = `${category}::${className}`;
-            if (!classes.has(key)) classes.set(key, { category, className, count: 0 });
+            if (!classes.has(key)) classes.set(key, { category, className, count: 0, isTeam: isTeamClass(className, classTypeSettings) });
             classes.get(key).count += 1;
         });
+    classes.forEach(item => {
+        if (item.isTeam) item.count = Math.ceil(item.count / 3);
+    });
 
-    const sortedClasses = [...classes.values()].sort((first, second) =>
-        second.count - first.count || compareScheduleClasses(first, second)
-    );
+    const sortedClasses = [...classes.values()]
+        .filter(item => !(item.category === "Open" && item.count <= 1))
+        .sort((first, second) => second.count - first.count || compareScheduleClasses(first, second));
     const assignments = loadScheduleTatamiAssignments();
     const orders = loadScheduleOrders();
     Object.keys(orders).forEach(key => { orders[key] = []; });
-    const tatamiTotals = Array.from({ length: tatamiCount }, () => 0);
-    sortedClasses.forEach(item => {
-        const tatamiIndex = tatamiTotals.indexOf(Math.min(...tatamiTotals));
-        const tatami = tatamiIndex + 1;
-        assignments[`${item.category}::${item.className}`] = tatami;
-        tatamiTotals[tatamiIndex] += item.count;
-        if (!orders[String(tatami)]) orders[String(tatami)] = [];
-        orders[String(tatami)].push(`${item.category}::${item.className}`);
+    
+    const bucketTotals = {};
+    daySettings.forEach(d => {
+        for(let t=1; t<=tatamiCount; t++) bucketTotals[`D${d.day}-T${t}`] = 0;
     });
+
+    sortedClasses.forEach(item => {
+        const validDays = daySettings.filter(d => d.category === "Semua" || d.category === item.category);
+        if (validDays.length === 0) return;
+        
+        let minBucket = null;
+        let minTotal = Infinity;
+        validDays.forEach(d => {
+            for(let t=1; t<=tatamiCount; t++) {
+                const b = `D${d.day}-T${t}`;
+                if (bucketTotals[b] < minTotal) {
+                    minTotal = bucketTotals[b];
+                    minBucket = b;
+                }
+            }
+        });
+
+        if (minBucket) {
+            assignments[`${item.category}::${item.className}`] = minBucket;
+            bucketTotals[minBucket] += item.count;
+            if (!orders[minBucket]) orders[minBucket] = [];
+            orders[minBucket].push(`${item.category}::${item.className}`);
+        }
+    });
+
     Object.keys(orders).forEach(tatami => {
         const orderKeys = new Set(orders[tatami]);
         const tatamiClasses = sortedClasses.filter(item => orderKeys.has(`${item.category}::${item.className}`));
@@ -816,6 +1034,7 @@ function autoAssignSchedule() {
     });
     localStorage.setItem(scheduleTatamiStorageKey, JSON.stringify(assignments));
     localStorage.setItem(scheduleOrderStorageKey, JSON.stringify(orders));
+    syncScheduleToCloud();
     renderScheduleList();
 }
 
@@ -843,6 +1062,7 @@ function shuffleScheduleBoard() {
         orders[tatami] = keys;
     });
     localStorage.setItem(scheduleOrderStorageKey, JSON.stringify(orders));
+    syncScheduleToCloud();
     renderScheduleList();
 }
 
@@ -860,6 +1080,7 @@ function saveScheduleTatamiAssignment(classKey, tatami) {
     if (tatami) assignments[classKey] = tatami;
     else delete assignments[classKey];
     localStorage.setItem(scheduleTatamiStorageKey, JSON.stringify(assignments));
+    syncScheduleToCloud();
 }
 
 function loadBracketMixClasses() {
@@ -905,6 +1126,51 @@ async function reconcileActiveMixParticipants(participantData) {
     await set(ref(rtdb, "versiPeserta"), Date.now());
     saveBracketMixClasses();
     return true;
+}
+
+async function syncScheduleToCloud() {
+    try {
+        const assignments = loadScheduleTatamiAssignments();
+        const orders = loadScheduleOrders();
+        const tatamiCount = localStorage.getItem(scheduleTatamiCountStorageKey) || "1";
+        const daySettings = getScheduleDaySettings();
+        await update(ref(rtdb, "pengaturan/jadwal"), {
+            assignments,
+            orders,
+            tatamiCount,
+            daySettings,
+            updatedAt: Date.now()
+        });
+        console.log("Jadwal disinkronkan ke Cloud.");
+    } catch (error) {
+        console.warn("Gagal sinkron jadwal ke cloud:", error);
+    }
+}
+
+async function loadScheduleFromCloud() {
+    try {
+        const snapshot = await get(ref(rtdb, "pengaturan/jadwal"));
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            if (data.assignments) localStorage.setItem(scheduleTatamiStorageKey, JSON.stringify(data.assignments));
+            if (data.orders) localStorage.setItem(scheduleOrderStorageKey, JSON.stringify(data.orders));
+            if (data.tatamiCount) {
+                localStorage.setItem(scheduleTatamiCountStorageKey, data.tatamiCount);
+                if (scheduleTatamiCount) scheduleTatamiCount.value = data.tatamiCount;
+            }
+            if (data.daySettings) {
+                localStorage.setItem(scheduleDaysStorageKey, JSON.stringify(data.daySettings));
+                if (scheduleDayCount) {
+                    scheduleDayCount.value = data.daySettings.length;
+                    renderDayConfig();
+                }
+            }
+            renderScheduleList();
+            console.log("Jadwal dimuat dari Cloud.");
+        }
+    } catch (error) {
+        console.warn("Gagal muat jadwal dari cloud:", error);
+    }
 }
 
 function saveBracketShuffleRules() {
@@ -1697,6 +1963,7 @@ function switchAdminView(viewId) {
 
     const panelMap = {
         "participant-list": participantListView,
+        "contingent-list": contingentListView,
         "class-recap": classRecapView,
         "medal-count": medalCountView,
         "payment-management": paymentManagement,
@@ -1717,6 +1984,7 @@ function switchAdminView(viewId) {
     });
 
     if (viewId === "mix-class-view") renderBracketMixSources();
+    if (viewId === "contingent-list") renderContingentList();
 
     if (previewPanel) {
         previewPanel.hidden = (viewId !== "upload-panel" || !currentExcelData.length);
@@ -1732,11 +2000,89 @@ document.querySelectorAll(".side-menu-item").forEach(button => {
     });
 });
 
+function getScheduleDaySettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(scheduleDaysStorageKey) || "[]");
+        if (saved && Array.isArray(saved) && saved.length > 0) return saved;
+    } catch (e) {}
+    return [{ day: 1, category: "Semua" }];
+}
+
+function saveScheduleDaySettings(settings) {
+    localStorage.setItem(scheduleDaysStorageKey, JSON.stringify(settings));
+    syncScheduleToCloud();
+}
+
+function renderDayConfig() {
+    if (!scheduleDaysContainer || !scheduleDayCount) return;
+    const settings = getScheduleDaySettings();
+    const count = parseInt(scheduleDayCount.value) || 1;
+    
+    while(settings.length < count) {
+        settings.push({ day: settings.length + 1, category: "Semua" });
+    }
+    while(settings.length > count) {
+        settings.pop();
+    }
+    saveScheduleDaySettings(settings);
+
+    scheduleDaysContainer.innerHTML = settings.map((s, index) => `
+        <div class="day-config-item" style="border:1px solid var(--border-color); padding: 10px; border-radius:6px; flex:1; min-width:150px;">
+            <strong style="display:block; margin-bottom: 5px;">Hari ${index + 1}</strong>
+            <label style="font-size:12px; display:block; margin-bottom:4px;">Tanggal</label>
+            <input type="date" class="schedule-day-date-input" data-day="${index + 1}" value="${s.date || ''}" style="width:100%; margin-bottom:8px; border:1px solid var(--border-color); border-radius:4px; padding:4px;">
+            <label style="font-size:12px; display:block; margin-bottom:4px;">Kategori</label>
+            <select class="schedule-day-category-select" data-day="${index + 1}" style="width: 100%;">
+                <option value="Semua" ${s.category === 'Semua' ? 'selected' : ''}>Semua Kategori</option>
+                <option value="Open" ${s.category === 'Open' ? 'selected' : ''}>Open Saja</option>
+                <option value="Festival" ${s.category === 'Festival' ? 'selected' : ''}>Festival Saja</option>
+            </select>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.schedule-day-category-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const day = parseInt(e.target.dataset.day);
+            const val = e.target.value;
+            const currentSettings = getScheduleDaySettings();
+            if (currentSettings[day - 1]) {
+                currentSettings[day - 1].category = val;
+                saveScheduleDaySettings(currentSettings);
+                renderScheduleList();
+            }
+        });
+    });
+
+    document.querySelectorAll('.schedule-day-date-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const day = parseInt(e.target.dataset.day);
+            const val = e.target.value;
+            const currentSettings = getScheduleDaySettings();
+            if (currentSettings[day - 1]) {
+                currentSettings[day - 1].date = val;
+                saveScheduleDaySettings(currentSettings);
+            }
+        });
+    });
+}
+
+if (scheduleDayCount) {
+    const initSettings = getScheduleDaySettings();
+    scheduleDayCount.value = initSettings.length;
+    renderDayConfig();
+    scheduleDayCount.addEventListener('change', () => {
+        renderDayConfig();
+        renderScheduleList();
+    });
+}
+
 scheduleTatamiCount?.addEventListener("change", () => {
     localStorage.setItem(scheduleTatamiCountStorageKey, scheduleTatamiCount.value);
+    syncScheduleToCloud();
     renderScheduleList();
 });
 scheduleShuffleButton?.addEventListener("click", shuffleScheduleBoard);
+schedulePrintButton?.addEventListener("click", exportScheduleToExcel);
 scheduleAutoAssignButton?.addEventListener("click", autoAssignSchedule);
 document.querySelectorAll(".schedule-tab").forEach(tab => {
     tab.addEventListener("click", () => {
@@ -1759,7 +2105,7 @@ scheduleBody?.addEventListener("change", event => {
     saveScheduleTatamiAssignment(tatamiSelect.dataset.scheduleClass, tatamiSelect.value);
     const row = tatamiSelect.closest("tr");
     const status = row?.querySelector(".schedule-status");
-    if (status) status.textContent = tatamiSelect.value ? `Tatami ${tatamiSelect.value}` : "Belum dijadwalkan";
+    if (status) status.textContent = formatScheduleValue(tatamiSelect.value);
 });
 
 openBracketDisplay?.addEventListener("click", () => {
@@ -1820,10 +2166,22 @@ bracketRulesDialog?.addEventListener("click", event => {
 createBracketMixButton?.addEventListener("click", createBracketMix);
 cancelBracketMixButton?.addEventListener("click", cancelBracketMix);
 
+const adminClearSearch = document.getElementById("admin-clear-search");
 adminParticipantSearch?.addEventListener("input", event => {
     adminParticipantSearchTerm = normalizeSearchText(event.target.value).replace(/\s+/g, " ").trim();
+    if (adminClearSearch) adminClearSearch.hidden = !event.target.value.trim();
     adminCurrentPage = 1;
     renderAdminParticipantList();
+});
+adminClearSearch?.addEventListener("click", () => {
+    if (adminParticipantSearch) {
+        adminParticipantSearch.value = "";
+        adminParticipantSearchTerm = "";
+        adminClearSearch.hidden = true;
+        adminCurrentPage = 1;
+        renderAdminParticipantList();
+        adminParticipantSearch.focus();
+    }
 });
 
 adminParticipantBody?.addEventListener("click", event => {
@@ -2036,8 +2394,9 @@ accessForm?.addEventListener("submit", event => {
                 accessButton.disabled = false;
                 return;
             }
+            const role = codeSnapshot.val().role || "admin";
             await authPersistenceReady;
-            sessionStorage.setItem("kensho_admin_access", "granted");
+            sessionStorage.setItem("kensho_admin_access", role === "superadmin" ? "superadmin" : "granted");
             await signInAnonymously(auth);
             setAccessStatus("Kode benar. Membuka sesi admin...", "success");
         } catch (error) {
@@ -2064,8 +2423,10 @@ accessCodeForm?.addEventListener("submit", async event => {
     setAccessCodeStatus("Membuat kode akses...");
     try {
         const codeHash = await hashAccessCode(code);
+        const role = newAccessRole ? newAccessRole.value : "admin";
         await set(ref(rtdb, `kodeAkses/${codeHash}`), {
             label: label || "Kode admin",
+            role: role,
             active: true,
             createdAt: new Date().toISOString()
         });
@@ -2097,13 +2458,22 @@ onAuthStateChanged(auth, user => {
 
         try {
             if (user.isAnonymous) {
-                if (sessionStorage.getItem("kensho_admin_access") === "granted") {
-                    await saveUserProfile(user, false);
-                    showAdminPanel(false);
+                const adminAccess = sessionStorage.getItem("kensho_admin_access");
+                if (adminAccess === "granted" || adminAccess === "superadmin") {
+                    const isSuper = adminAccess === "superadmin";
+                    await saveUserProfile(user, isSuper);
+                    showAdminPanel(isSuper);
                     await loadSlowTrackFormulaSettings();
                     await loadClassTypeSettings();
                     await loadParticipantSummary();
-                    setAccessStatus("Login Admin berhasil.", "success");
+                    await loadScheduleFromCloud();
+                    
+                    if (isSuper) {
+                        await loadAccessCodes();
+                        await loadChampionshipName();
+                    }
+
+                    setAccessStatus(isSuper ? "Login Super Admin berhasil." : "Login Admin berhasil.", "success");
                 } else {
                     await signOut(auth);
                 }
@@ -2113,12 +2483,13 @@ onAuthStateChanged(auth, user => {
             const isSuperAdminUser = await ensureSuperAdmin(user);
             await saveUserProfile(user, isSuperAdminUser);
 
-                    if (isSuperAdminUser) {
+            if (isSuperAdminUser) {
                 setLoginStatus("Login berhasil sebagai Super Admin.", "success");
                 showAdminPanel(true);
                 await loadSlowTrackFormulaSettings();
                 await loadClassTypeSettings();
                 await loadParticipantSummary();
+                await loadScheduleFromCloud();
                 await loadAccessCodes();
                 await loadChampionshipName();
             } else {
@@ -2760,3 +3131,321 @@ saveButton?.addEventListener("click", async () => {
         saveButton.textContent = "Simpan Semua ke RTDB";
     }
 });
+
+window.deleteContingent = async (contingentName) => {
+    if (!contingentName) return;
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus data pendaftaran dan kontingen "${contingentName}"?\nTindakan ini tidak bisa dibatalkan.`)) return;
+    
+    try {
+        const pToDelete = adminParticipants.filter(p => {
+            let cName = (p.KONTINGEN || p["KONTINGEN / NAMA TEAM"] || "").trim().toUpperCase();
+            if (!cName || cName === "-") cName = "TANPA KONTINGEN";
+            return cName === contingentName;
+        });
+        if (pToDelete.length === 0) return alert("Data peserta dari kontingen ini tidak ditemukan.");
+        
+        const promises = pToDelete.map(p => remove(ref(rtdb, `peserta/${p.id}`)));
+        await Promise.all(promises);
+        
+        const newVersion = Date.now();
+        await set(ref(rtdb, "versiPeserta"), newVersion);
+        sessionStorage.setItem(adminVersionKey, String(newVersion));
+        
+        setStatus(`Berhasil menghapus ${pToDelete.length} data peserta dari kontingen ${contingentName}.`, "success");
+        await loadParticipantSummary(true);
+    } catch(err) {
+        console.error("Gagal menghapus kontingen:", err);
+        setStatus("Gagal menghapus kontingen. Periksa koneksi dan izin Firebase.", "error");
+    }
+};
+
+window.renderContingentList = () => {
+    if (!adminContingentBody) return;
+    
+    const contingentMap = {};
+    let totalContingents = 0;
+    
+    adminParticipants.forEach(p => {
+        let cName = (p.KONTINGEN || p["KONTINGEN / NAMA TEAM"] || "").trim().toUpperCase();
+        if (!cName || cName === "-") cName = "TANPA KONTINGEN";
+        
+        if (!contingentMap[cName]) {
+            contingentMap[cName] = 0;
+            totalContingents++;
+        }
+        contingentMap[cName]++;
+    });
+    
+    const sortedContingents = Object.keys(contingentMap).sort();
+    
+    if (contingentListBadge) {
+        contingentListBadge.textContent = `${totalContingents} Kontingen`;
+    }
+    
+    adminContingentBody.innerHTML = "";
+    
+    if (sortedContingents.length === 0) {
+        adminContingentBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem;">Belum ada data kontingen</td></tr>`;
+        return;
+    }
+    
+    sortedContingents.forEach((cName, idx) => {
+        const tr = document.createElement("tr");
+        
+        const tdNo = document.createElement("td");
+        tdNo.style.textAlign = "center";
+        tdNo.textContent = idx + 1;
+        
+        const tdName = document.createElement("td");
+        tdName.style.fontWeight = "600";
+        tdName.textContent = cName;
+        
+        const tdCount = document.createElement("td");
+        tdCount.style.textAlign = "center";
+        tdCount.innerHTML = `<span style="background: var(--surface-200); padding: 4px 10px; border-radius: 99px; font-weight: 600; font-size: 13px;">${contingentMap[cName]}</span>`;
+        
+        const tdAction = document.createElement("td");
+        tdAction.style.textAlign = "center";
+        
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "action-btn-group";
+        
+        const btnDelete = document.createElement("button");
+        btnDelete.type = "button";
+        btnDelete.className = "action-icon-btn delete-icon-btn";
+        btnDelete.title = "Hapus Kontingen";
+        btnDelete.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        btnDelete.onclick = () => window.deleteContingent(cName);
+        
+        actionGroup.appendChild(btnDelete);
+        tdAction.appendChild(actionGroup);
+        
+        tr.appendChild(tdNo);
+        tr.appendChild(tdName);
+        tr.appendChild(tdCount);
+        tr.appendChild(tdAction);
+        
+        adminContingentBody.appendChild(tr);
+    });
+};
+
+async function exportScheduleToExcel() {
+    if (typeof ExcelJS === 'undefined') {
+        alert("Library ExcelJS tidak ditemukan. Harap muat ulang halaman.");
+        return;
+    }
+
+    const tatamiCount = Number(scheduleTatamiCount?.value || 1);
+    const daySettings = getScheduleDaySettings();
+    const orders = loadScheduleOrders();
+    const assignments = loadScheduleTatamiAssignments();
+    
+    const classesMap = new Map();
+    adminParticipants.forEach(participant => {
+        const category = normalizeParticipantCategory(participant.kategori);
+        const className = normalizeClassName(participant["KELAS PERTANDINGAN"]);
+        const key = `${category}::${className}`;
+        if (!classesMap.has(key)) classesMap.set(key, { category, className, count: 0, isTeam: isTeamClass(className, classTypeSettings) });
+        classesMap.get(key).count += 1;
+    });
+    classesMap.forEach(item => {
+        if (item.isTeam) item.count = Math.ceil(item.count / 3);
+    });
+    
+    const validClasses = [...classesMap.values()].filter(item => !(item.category === "Open" && item.count <= 1));
+    
+    const boardData = daySettings.map(d => ({
+        day: d.day,
+        tatamis: Array.from({ length: tatamiCount }, (_, index) => ({ number: index + 1, classes: [] }))
+    }));
+
+    validClasses.forEach(item => {
+        const savedValueRaw = String(assignments[`${item.category}::${item.className}`] || "");
+        const savedValue = /^\d+$/.test(savedValueRaw) ? `D1-T${savedValueRaw}` : savedValueRaw;
+        const m = savedValue.match(/^D(\d+)-T(\d+)$/);
+        if (m) {
+            const dIdx = parseInt(m[1]) - 1;
+            const tIdx = parseInt(m[2]) - 1;
+            if (boardData[dIdx] && boardData[dIdx].tatamis[tIdx]) {
+                boardData[dIdx].tatamis[tIdx].classes.push(item);
+            }
+        }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Antigravity";
+    const sheet = workbook.addWorksheet("Jadwal Pertandingan");
+    
+    // Setup Kertas Legal Landscape
+    sheet.pageSetup = { paperSize: 5, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.2, right: 0.2, top: 0.3, bottom: 0.3, header: 0.1, footer: 0.1 } };
+    
+    let columns = [];
+    for (let i = 0; i < tatamiCount; i++) {
+        const baseKey = `t${i}`;
+        columns.push({ header: '', key: `${baseKey}_no`, width: 4 });
+        columns.push({ header: '', key: `${baseKey}_category`, width: 12 });
+        columns.push({ header: '', key: `${baseKey}_className`, width: 38 });
+        columns.push({ header: '', key: `${baseKey}_count`, width: 8 });
+        if (i < tatamiCount - 1) {
+            columns.push({ header: '', key: `spacer_${i}`, width: 2 });
+        }
+    }
+    sheet.columns = columns;
+
+    const eventName = document.getElementById("championship-title")?.textContent || "KEJUARAAN KARATE";
+    const totalCols = (tatamiCount * 5) - 1;
+
+    sheet.addRow([]).height = 15; // Top spacer for logo
+
+    const mainTitleRow = sheet.addRow([]);
+    mainTitleRow.height = 30;
+    sheet.mergeCells(mainTitleRow.number, 1, mainTitleRow.number, totalCols);
+    mainTitleRow.getCell(1).value = 'JADWAL PERTANDINGAN';
+    mainTitleRow.getCell(1).font = { name: 'Franklin Gothic Demi', size: 20, bold: true };
+    mainTitleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const subtitleRow = sheet.addRow([]);
+    subtitleRow.height = 25;
+    sheet.mergeCells(subtitleRow.number, 1, subtitleRow.number, totalCols);
+    subtitleRow.getCell(1).value = eventName.toUpperCase();
+    subtitleRow.getCell(1).font = { name: 'Franklin Gothic Demi', size: 14, bold: true };
+    subtitleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    sheet.addRow([]).height = 20; // Empty spacer
+
+    let hasData = false;
+    boardData.forEach(dayGroup => {
+        let maxRows = 0;
+        dayGroup.tatamis.forEach(group => {
+            const order = orders[`D${dayGroup.day}-T${group.number}`] || orders[String(group.number)] || [];
+            group.classes.sort((first, second) => {
+                const firstIndex = order.indexOf(`${first.category}::${first.className}`);
+                const secondIndex = order.indexOf(`${second.category}::${second.className}`);
+                if (firstIndex !== -1 || secondIndex !== -1) {
+                    return (firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex);
+                }
+                return compareScheduleClasses(first, second);
+            });
+            if (group.classes.length > maxRows) maxRows = group.classes.length;
+        });
+
+        if (maxRows === 0) return;
+        hasData = true;
+
+        const titleRow = sheet.addRow([]);
+        titleRow.height = 25;
+        const headerRow = sheet.addRow([]);
+        headerRow.height = 20;
+
+        dayGroup.tatamis.forEach((group, i) => {
+            const startCol = i * 5 + 1;
+            const endCol = startCol + 3;
+            sheet.mergeCells(titleRow.number, startCol, titleRow.number, endCol);
+            
+            const titleCell = sheet.getCell(titleRow.number, startCol);
+            titleCell.value = `HARI ${dayGroup.day} - TATAMI ${group.number}`;
+            titleCell.font = { name: 'Franklin Gothic Demi', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+            titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A3C5E' } };
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            titleCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+            const h1 = headerRow.getCell(startCol); h1.value = 'NO';
+            const h2 = headerRow.getCell(startCol + 1); h2.value = 'KATEGORI';
+            const h3 = headerRow.getCell(startCol + 2); h3.value = 'NAMA KELAS';
+            const h4 = headerRow.getCell(startCol + 3); h4.value = 'PARTAI';
+
+            for (let c = 0; c < 4; c++) {
+                const cell = headerRow.getCell(startCol + c);
+                cell.font = { name: 'Franklin Gothic Demi', size: 10, bold: true };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            }
+        });
+
+        for (let r = 0; r < maxRows; r++) {
+            const rowObj = {};
+            dayGroup.tatamis.forEach((group, i) => {
+                const baseKey = `t${i}`;
+                const item = group.classes[r];
+                if (item) {
+                    rowObj[`${baseKey}_no`] = r + 1;
+                    rowObj[`${baseKey}_category`] = item.category;
+                    rowObj[`${baseKey}_className`] = item.className.toUpperCase();
+                    rowObj[`${baseKey}_count`] = item.count;
+                }
+            });
+            const row = sheet.addRow(rowObj);
+            row.font = { name: 'Franklin Gothic Demi', size: 9 };
+            
+            dayGroup.tatamis.forEach((group, i) => {
+                const startCol = i * 5 + 1;
+                if (group.classes[r]) {
+                    row.getCell(startCol).alignment = { horizontal: 'center', vertical: 'middle' };
+                    row.getCell(startCol + 1).alignment = { horizontal: 'center', vertical: 'middle' };
+                    row.getCell(startCol + 2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                    row.getCell(startCol + 3).alignment = { horizontal: 'center', vertical: 'middle' };
+                    for (let c = 0; c < 4; c++) {
+                        row.getCell(startCol + c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                    }
+                }
+            });
+        }
+
+        const totalRowObj = {};
+        dayGroup.tatamis.forEach((group, i) => {
+            const baseKey = `t${i}`;
+            const totalCount = group.classes.reduce((sum, item) => sum + item.count, 0);
+            totalRowObj[`${baseKey}_count`] = totalCount;
+        });
+        
+        const totalRow = sheet.addRow(totalRowObj);
+        totalRow.font = { name: 'Franklin Gothic Demi', size: 10, bold: true };
+        
+        dayGroup.tatamis.forEach((group, i) => {
+            const startCol = i * 5 + 1;
+            sheet.mergeCells(totalRow.number, startCol, totalRow.number, startCol + 2);
+            const labelCell = sheet.getCell(totalRow.number, startCol);
+            labelCell.value = 'TOTAL PARTAI / PESERTA';
+            labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+            
+            const countCell = sheet.getCell(totalRow.number, startCol + 3);
+            countCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            countCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+            
+            for (let c = 0; c < 4; c++) {
+                totalRow.getCell(startCol + c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            }
+        });
+        
+        sheet.addRow([]).height = 20; // Spacer after each day
+    });
+
+    if (!hasData) {
+        alert("Tidak ada jadwal yang bisa dicetak.");
+        return;
+    }
+
+    const schedulePrintButtonObj = document.getElementById("schedule-print-button");
+    const originalText = schedulePrintButtonObj.textContent;
+    schedulePrintButtonObj.textContent = "Menyiapkan Excel...";
+    schedulePrintButtonObj.disabled = true;
+
+    try {
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Jadwal_Pertandingan.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch(e) {
+        console.error("Gagal export excel", e);
+        alert("Terjadi kesalahan saat memproses file Excel.");
+    } finally {
+        schedulePrintButtonObj.textContent = originalText;
+        schedulePrintButtonObj.disabled = false;
+    }
+}
